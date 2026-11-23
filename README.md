@@ -126,13 +126,17 @@ npm run dev
 
 ```text
 START → intake → supervisor
-                   ├─(Send 并行)→ analyze_job  ─┐
-                   ├─(Send 并行)→ review_job   ─┤
-                   ├─(Send 并行)→ optimize_resume ─┼→ supervisor（汇聚）
-                   ├─(Send 并行)→ interview    ─┘
-                   └→ coach → END
+                   ├─ 无岗位画像          → Send 并行 analyze_job（按岗位）     → supervisor
+                   ├─ 缺当前版本评审      → Send 并行 review_job（按岗位）      → supervisor
+                   ├─ 未达标且轮次未用尽  → Send 并行 optimize_resume（按岗位） → supervisor
+                   └─ 全部处理完成        → coach
+                                              ├─ 有岗位需继续面试 → Send 并行 interview（按岗位）→ supervisor
+                                              └─ 无需面试         → END
 ```
 
+- `supervisor` 每次只选择一个**阶段**，阶段内按岗位并行（`Send`）；四个节点不会同时执行。
+- 优先级为：岗位解析 → 简历评审 → 简历优化 → 生成建议；评审与优化完成后都会回到 `supervisor` 重新判断。
+- `coach` 生成建议后，若仍有岗位需要面试（未达面试轮次，或上次面试分低于阈值），会并行发起面试；面试结果回到 `supervisor`，低分岗位可再次进入优化。
 - 评分低于阈值且未达轮次上限时，`supervisor` 继续分发优化任务。
 - 每个节点的状态都写入 checkpoint，可按 `thread_id` + `checkpoint_id` 回放。
 - 运行结束后异步提取长期记忆并生成会话摘要，失败不会影响主流程结果。
