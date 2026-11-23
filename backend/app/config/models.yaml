@@ -1,0 +1,29 @@
+# Role-based model routing. Environment overrides:
+#   DEFAULT_MODEL=<model>        MODEL_<ROLE>=<model>
+# Providers are OpenAI-compatible; credentials come from LLM_API_KEY / LLM_BASE_URL.
+default:
+  provider: openai
+  model: gpt-4o-mini
+  temperature: 0.2
+
+roles:
+  supervisor:
+    provider: openai
+    model: gpt-4o-mini
+    temperature: 0.0
+  job_analyst:
+    provider: openai
+    model: gpt-4o-mini
+    temperature: 0.1
+  resume_reviewer:
+    provider: openai
+    model: gpt-4o
+    temperature: 0.0
+  resume_optimizer:
+    provider: openai
+    model: gpt-4o
+    temperature: 0.3
+  career_coach:
+    provider: openai
+    model: gpt-4o-mini
+    temperature: 0.4

@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Tooling caches
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+
+# Runtime data (checkpoints, uploaded resumes)
+data/
+backend/data/
+
+# Evaluation output (keep the directory placeholder)
+evals/reports/*.json
+
+# Frontend
+node_modules/
+dist/
+
+# Misc
+.screenshots/
+.DS_Store
+Thumbs.db

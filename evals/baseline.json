@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "note": "Seed baselines with explicit tolerances. Re-seed only after a reviewed prompt change.",
+  "metrics": {
+    "job_analyst": {
+      "schema_pass_rate": {"baseline": 0.95, "tolerance": 0.1, "higher_is_better": true},
+      "missing_recall": {"baseline": 0.7, "tolerance": 0.2, "higher_is_better": true},
+      "hallucination_rate": {"baseline": 0.1, "tolerance": 0.1, "higher_is_better": false},
+      "avg_latency_ms": {"baseline": 15000, "tolerance": 15000, "higher_is_better": false},
+      "avg_tokens": {"baseline": 2500, "tolerance": 1500, "higher_is_better": false}
+    },
+    "resume_reviewer": {
+      "schema_pass_rate": {"baseline": 0.95, "tolerance": 0.1, "higher_is_better": true},
+      "missing_recall": {"baseline": 0.7, "tolerance": 0.2, "higher_is_better": true},
+      "hallucination_rate": {"baseline": 0.1, "tolerance": 0.1, "higher_is_better": false},
+      "score_mae": {"baseline": 15, "tolerance": 10, "higher_is_better": false},
+      "avg_latency_ms": {"baseline": 15000, "tolerance": 15000, "higher_is_better": false},
+      "avg_tokens": {"baseline": 2500, "tolerance": 1500, "higher_is_better": false}
+    },
+    "resume_optimizer": {
+      "schema_pass_rate": {"baseline": 0.95, "tolerance": 0.1, "higher_is_better": true},
+      "missing_recall": {"baseline": 0.6, "tolerance": 0.2, "higher_is_better": true},
+      "hallucination_rate": {"baseline": 0.15, "tolerance": 0.15, "higher_is_better": false},
+      "avg_latency_ms": {"baseline": 20000, "tolerance": 20000, "higher_is_better": false},
+      "avg_tokens": {"baseline": 3000, "tolerance": 2000, "higher_is_better": false}
+    }
+  }
+}

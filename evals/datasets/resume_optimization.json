@@ -1,0 +1,81 @@
+{
+  "version": "1.0.0",
+  "task": "resume_optimization",
+  "samples": [
+    {
+      "id": "ro-001",
+      "input": {
+        "goal": "后端工程师",
+        "baseline_resume": "Backend engineer with five years of Python experience. Built REST APIs and internal services. Managed PostgreSQL databases and wrote automated tests. Led code reviews. Education: BSc Computer Science.",
+        "profile_json": {
+          "job_id": "job-1",
+          "title": "Backend Engineer",
+          "must_have": ["Python", "PostgreSQL", "Docker"],
+          "keywords": ["Python", "PostgreSQL", "Docker"],
+          "status": "ok"
+        },
+        "review_json": {
+          "job_id": "job-1",
+          "variant_version": 0,
+          "score": 72,
+          "missing": ["Docker"],
+          "issues": ["Docker experience is not evidenced"]
+        }
+      },
+      "expected": {
+        "remaining_gaps": ["Docker"],
+        "hallucination_guard": ["Docker", "Kubernetes"]
+      }
+    },
+    {
+      "id": "ro-002",
+      "input": {
+        "goal": "数据分析师",
+        "baseline_resume": "Data analyst with three years of SQL and Excel experience. Built reporting dashboards in Excel. Presented monthly business reviews. Education: BA Economics.",
+        "profile_json": {
+          "job_id": "job-2",
+          "title": "Data Analyst",
+          "must_have": ["SQL", "Tableau", "Python"],
+          "keywords": ["SQL", "Tableau", "Python"],
+          "status": "ok"
+        },
+        "review_json": {
+          "job_id": "job-2",
+          "variant_version": 0,
+          "score": 55,
+          "missing": ["Tableau", "Python"],
+          "issues": ["No visualization tooling is evidenced"]
+        }
+      },
+      "expected": {
+        "remaining_gaps": ["Tableau", "Python"],
+        "hallucination_guard": ["Tableau", "Python", "dbt"]
+      }
+    },
+    {
+      "id": "ro-003",
+      "input": {
+        "goal": "前端工程师",
+        "baseline_resume": "Frontend engineer with four years of React and TypeScript experience. Built accessible component libraries and design systems. Strong CSS and testing skills. Education: BSc Software Engineering.",
+        "profile_json": {
+          "job_id": "job-3",
+          "title": "Frontend Developer",
+          "must_have": ["React", "TypeScript", "Storybook"],
+          "keywords": ["React", "TypeScript", "Storybook"],
+          "status": "ok"
+        },
+        "review_json": {
+          "job_id": "job-3",
+          "variant_version": 0,
+          "score": 85,
+          "missing": ["Storybook"],
+          "issues": []
+        }
+      },
+      "expected": {
+        "remaining_gaps": ["Storybook"],
+        "hallucination_guard": ["Storybook", "Vue"]
+      }
+    }
+  ]
+}

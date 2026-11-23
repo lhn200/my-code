@@ -1,0 +1,42 @@
+{
+  "version": "1.0.0",
+  "task": "job_analysis",
+  "samples": [
+    {
+      "id": "ja-001",
+      "input": {
+        "job_title": "Backend Engineer (Python)",
+        "job_text": "We are hiring a Backend Engineer to build payment APIs. Must have strong Python and PostgreSQL experience. Experience with Docker is a plus. Responsibilities: design REST services, write tests, review code. Keywords: Python, PostgreSQL, Docker, REST."
+      },
+      "expected": {
+        "must_have": ["Python", "PostgreSQL"],
+        "keywords": ["Python", "PostgreSQL", "Docker", "REST"],
+        "hallucination_guard": ["Rust", "Kubernetes"]
+      }
+    },
+    {
+      "id": "ja-002",
+      "input": {
+        "job_title": "Data Analyst",
+        "job_text": "Data Analyst role for the growth team. Requirements: SQL and Tableau. Excel is preferred. Responsibilities: build dashboards, maintain reporting pipelines, present weekly insights. Keywords: SQL, Tableau, Excel, dashboards."
+      },
+      "expected": {
+        "must_have": ["SQL", "Tableau"],
+        "keywords": ["SQL", "Tableau", "Excel"],
+        "hallucination_guard": ["Python", "Rust"]
+      }
+    },
+    {
+      "id": "ja-003",
+      "input": {
+        "job_title": "Frontend Developer",
+        "job_text": "Frontend developer for our design system team. Must have React and TypeScript. Nice to have Storybook experience. Responsibilities: build accessible components, partner with designers, improve testing. Keywords: React, TypeScript, Storybook, accessibility."
+      },
+      "expected": {
+        "must_have": ["React", "TypeScript"],
+        "keywords": ["React", "TypeScript", "Storybook"],
+        "hallucination_guard": ["Angular", "Vue"]
+      }
+    }
+  ]
+}
