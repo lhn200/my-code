@@ -8,6 +8,7 @@ from fastapi.testclient import TestClient
 from app.config import Settings
 from app.main import create_app
 
+from tests.auth_utils import authenticate
 from tests.fakes import DEFAULT_HANDLERS, FakeModels, make_context
 
 
@@ -17,11 +18,19 @@ def settings(tmp_path: Path) -> Settings:
         _env_file=None,
         checkpoint_db_path=tmp_path / "checkpoints.sqlite3",
         upload_dir=tmp_path / "uploads",
+        jwt_secret="test-secret-key",
     )
 
 
 @pytest.fixture
 def client(settings: Settings) -> TestClient:
+    with TestClient(create_app(settings)) as test_client:
+        authenticate(test_client)
+        yield test_client
+
+
+@pytest.fixture
+def anon_client(settings: Settings) -> TestClient:
     with TestClient(create_app(settings)) as test_client:
         yield test_client
 
@@ -37,4 +46,5 @@ def fake_client(settings: Settings):
     models = FakeModels(DEFAULT_HANDLERS)
     with TestClient(create_app(settings, model_factory=models.factory)) as test_client:
         test_client.models = models
+        authenticate(test_client)
         yield test_client

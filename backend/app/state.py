@@ -74,6 +74,7 @@ class InterviewReportSummary(_Model):
     interview_thread_id: str
     status: Literal["completed", "abandoned"]
     generated_at: str
+    variant_version: int = 0
     dimension_averages: dict[str, float] = Field(default_factory=dict)
     overall_score: float | None = None
     highlights: list[str] = Field(default_factory=list)
@@ -188,6 +189,15 @@ def merge_attempts(
     return merged
 
 
+def merge_context_meta(
+    left: Mapping[str, Any] | None, right: Mapping[str, Any] | None
+) -> dict[str, Any]:
+    """Merge per-node context budget metadata without cross-node overwrites."""
+    merged: dict[str, Any] = dict(left or {})
+    merged.update(right or {})
+    return merged
+
+
 def _error_key(item: Any) -> tuple[str, str, str]:
     if isinstance(item, Mapping):
         return (
@@ -253,6 +263,7 @@ class AgentState(TypedDict, total=False):
     optimization_history: Annotated[list[Any], merge_rounds]
     optimization_attempts: Annotated[dict[str, int], merge_attempts]
     interview_reports: Annotated[dict[str, Any], merge_interview_reports]
+    interview_attempts: Annotated[dict[str, int], merge_attempts]
     advice: str
     errors: Annotated[list[Any], merge_errors]
     run_status: str
@@ -265,7 +276,7 @@ class AgentState(TypedDict, total=False):
     summarized_through_turn: int
     memory_context: list[dict[str, Any]]
     memory_context_meta: dict[str, Any]
-    context_budget_meta: dict[str, Any]
+    context_budget_meta: Annotated[dict[str, Any], merge_context_meta]
 
 
 MEMORY_STATE_DEFAULTS: dict[str, Any] = {
@@ -346,6 +357,7 @@ __all__ = [
     "merge_attempts",
     "merge_by_job_id",
     "merge_by_review_key",
+    "merge_context_meta",
     "merge_errors",
     "merge_interview_reports",
     "merge_rounds",

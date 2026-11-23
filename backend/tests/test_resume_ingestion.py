@@ -18,6 +18,7 @@ from app.services.resume_parser import (
     delete_resume_file,
     ingest_resume,
 )
+from tests.auth_utils import authenticate
 from tests.fakes import DEFAULT_HANDLERS, FakeModels, make_context
 
 
@@ -266,6 +267,7 @@ def test_upload_and_paste_are_equivalent(settings, monkeypatch) -> None:
     ]
     models = FakeModels(DEFAULT_HANDLERS)
     with TestClient(create_app(settings, model_factory=models.factory)) as client:
+        authenticate(client)
         for name, mime, data, literal in cases:
             parsed = ingest_resume(name, mime, data, settings)
             assert parsed.text == literal
@@ -287,6 +289,7 @@ def test_deleted_upload_dir_does_not_block_startup_or_runs(settings) -> None:
 
     models = FakeModels(DEFAULT_HANDLERS)
     with TestClient(create_app(settings, model_factory=models.factory)) as client:
+        authenticate(client)
         assert client.get("/api/health").status_code == 200
         response = client.post(
             "/api/runs",

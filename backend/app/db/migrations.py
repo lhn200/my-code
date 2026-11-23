@@ -1,14 +1,14 @@
-"""SQLite schema bootstrap for memory tables."""
+"""Idempotent SQLite schema bootstrap and migrations."""
 
 from __future__ import annotations
 
 import sqlite3
-from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterator
 
-SCHEMA_VERSION = 1
+from .connection import connect
+
+SCHEMA_VERSION = 2
 
 _CORE_DDL = """
 CREATE TABLE IF NOT EXISTS user_memories (
@@ -60,6 +60,27 @@ CREATE TABLE IF NOT EXISTS session_memory_meta (
 
 CREATE INDEX IF NOT EXISTS ix_session_memory_meta_user
     ON session_memory_meta (user_id, updated_at DESC);
+
+CREATE TABLE IF NOT EXISTS users (
+    id TEXT PRIMARY KEY,
+    email TEXT NOT NULL,
+    password_hash TEXT NOT NULL,
+    created_at TEXT NOT NULL
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS ux_users_email_lower
+    ON users (lower(email));
+
+CREATE TABLE IF NOT EXISTS runs (
+    thread_id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL REFERENCES users (id),
+    title TEXT NOT NULL,
+    status TEXT NOT NULL
+        CHECK (status IN ('running', 'completed', 'partial', 'failed')),
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    deleted_at TEXT
+);
 """
 
 _FTS_DDL = """
@@ -90,32 +111,30 @@ class SchemaInfo:
     fts5_enabled: bool
 
 
-@contextmanager
-def connect(db_path: Path) -> Iterator[sqlite3.Connection]:
-    """Open a SQLite connection with WAL and row access by column name."""
-    connection = sqlite3.connect(db_path)
-    connection.row_factory = sqlite3.Row
-    try:
-        connection.execute("PRAGMA journal_mode=WAL")
-        connection.execute("PRAGMA foreign_keys=ON")
-        yield connection
-    finally:
-        connection.close()
-
-
 def init_db(db_path: Path) -> SchemaInfo:
-    """Create memory tables and indexes idempotently, falling back without FTS5."""
+    """Create tables and indexes idempotently, falling back without FTS5."""
     db_path = Path(db_path)
     db_path.parent.mkdir(parents=True, exist_ok=True)
 
     with connect(db_path) as connection:
         connection.executescript(_CORE_DDL)
+        _ensure_runs_columns(connection)
+        connection.execute(
+            "CREATE INDEX IF NOT EXISTS ix_runs_user_active "
+            "ON runs (user_id, deleted_at, updated_at DESC)"
+        )
         fts5_enabled = _try_create_fts(connection)
         connection.execute(f"PRAGMA user_version={SCHEMA_VERSION}")
         connection.commit()
         version = connection.execute("PRAGMA user_version").fetchone()[0]
 
     return SchemaInfo(version=int(version), fts5_enabled=fts5_enabled)
+
+
+def _ensure_runs_columns(connection: sqlite3.Connection) -> None:
+    columns = {row["name"] for row in connection.execute("PRAGMA table_info(runs)")}
+    if columns and "deleted_at" not in columns:
+        connection.execute("ALTER TABLE runs ADD COLUMN deleted_at TEXT")
 
 
 def _try_create_fts(connection: sqlite3.Connection) -> bool:
@@ -132,3 +151,6 @@ def _try_create_fts(connection: sqlite3.Connection) -> bool:
             """
         )
         return False
+
+
+__all__ = ["SCHEMA_VERSION", "SchemaInfo", "init_db"]

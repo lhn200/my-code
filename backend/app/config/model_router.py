@@ -15,7 +15,50 @@ ROLES: tuple[str, ...] = (
     "resume_reviewer",
     "resume_optimizer",
     "career_coach",
+    "interviewer",
+    "summarizer",
+    "memory_extractor",
 )
+
+PROXY_ENV_VARS: tuple[str, ...] = (
+    "HTTPS_PROXY",
+    "https_proxy",
+    "HTTP_PROXY",
+    "http_proxy",
+    "ALL_PROXY",
+    "all_proxy",
+)
+
+
+def has_explicit_proxy(env: Mapping[str, str] | None = None) -> bool:
+    """Whether a proxy is configured explicitly through environment variables."""
+    source: Mapping[str, str] = os.environ if env is None else env
+    return any((source.get(name) or "").strip() for name in PROXY_ENV_VARS)
+
+
+def _openai_http_module() -> Any:
+    """Return the httpx-compatible module the OpenAI SDK actually uses."""
+    try:
+        from openai import _base_client
+    except ImportError as exc:  # pragma: no cover - openai is a hard dependency
+        raise ModelConfigError("openai package is required to build HTTP clients") from exc
+    module = getattr(_base_client, "httpx2", None) or getattr(_base_client, "httpx", None)
+    if module is not None:
+        return module
+    try:
+        import httpx2 as module  # noqa: F401
+    except ImportError:
+        import httpx as module  # type: ignore[no-redef]
+    return module
+
+
+def build_proxy_free_clients() -> dict[str, Any]:
+    """Create HTTP clients that ignore system-level proxy settings."""
+    module = _openai_http_module()
+    return {
+        "http_client": module.Client(trust_env=False),
+        "http_async_client": module.AsyncClient(trust_env=False),
+    }
 
 
 class ModelConfigError(ValueError):
@@ -109,10 +152,12 @@ class ModelRouter:
         base_url: str | None = None,
         model_factory: Callable[[str, RoleConfig], Any] | None = None,
         configs: dict[str, RoleConfig] | None = None,
+        respect_env_proxy: bool = True,
     ) -> None:
         self._configs = configs or load_models_config(config_path, env=env)
         self.api_key = api_key
         self.base_url = base_url
+        self.respect_env_proxy = respect_env_proxy
         self._model_factory = model_factory
         self._cache: dict[str, Any] = {}
 
@@ -153,13 +198,19 @@ class ModelRouter:
             kwargs["api_key"] = self.api_key
         if self.base_url:
             kwargs["base_url"] = self.base_url
+        if not (self.respect_env_proxy and has_explicit_proxy()):
+            # 未显式配置代理时忽略系统级代理（Windows 注册表里的代理常不可用）。
+            kwargs.update(build_proxy_free_clients())
         return ChatOpenAI(**kwargs)
 
 
 __all__ = [
     "ROLES",
+    "PROXY_ENV_VARS",
     "ModelConfigError",
     "ModelRouter",
     "RoleConfig",
+    "build_proxy_free_clients",
+    "has_explicit_proxy",
     "load_models_config",
 ]

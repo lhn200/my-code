@@ -3,6 +3,7 @@ from __future__ import annotations
 from fastapi.testclient import TestClient
 
 from app.main import create_app
+from tests.auth_utils import authenticate
 from tests.fakes import DEFAULT_HANDLERS, FakeModels
 
 
@@ -82,6 +83,7 @@ def test_job_id_is_generated(settings) -> None:
     models = FakeModels(DEFAULT_HANDLERS)
     job = {"title": "Backend Engineer", "original_position_text": "Python"}
     with TestClient(create_app(settings, model_factory=models.factory)) as client:
+        authenticate(client)
         response = client.post("/api/runs", json=_payload([job]))
         assert response.status_code == 200
         assert response.json()["jobs"][0]["job_id"] == "job-1"
@@ -97,6 +99,7 @@ def test_five_jobs_accepted(settings) -> None:
         for index in range(5)
     ]
     with TestClient(create_app(settings, model_factory=models.factory)) as client:
+        authenticate(client)
         response = client.post("/api/runs", json=_payload(jobs))
         assert response.status_code == 200
         assert len(response.json()["jobs"]) == 5
@@ -105,6 +108,7 @@ def test_five_jobs_accepted(settings) -> None:
 def test_run_returns_structured_result(settings) -> None:
     models = FakeModels(DEFAULT_HANDLERS)
     with TestClient(create_app(settings, model_factory=models.factory)) as client:
+        authenticate(client)
         response = client.post("/api/runs", json=_payload())
         assert response.status_code == 200
         body = response.json()

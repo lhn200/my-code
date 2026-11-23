@@ -14,6 +14,9 @@ ROLES: tuple[str, ...] = (
     "resume_reviewer",
     "resume_optimizer",
     "career_coach",
+    "interviewer",
+    "summarizer",
+    "memory_extractor",
 )
 
 HUMAN_TEMPLATE_MARKER = "--- HUMAN TEMPLATE ---"
@@ -39,6 +42,13 @@ UNTRUSTED_PLACEHOLDERS: dict[str, str] = {
     "history_json": "OPTIMIZATION_HISTORY_JSON",
     "job_summaries_json": "JOB_RESULTS_JSON",
     "interview_reports_json": "INTERVIEW_REPORTS_JSON",
+    "prior_interview_json": "PRIOR_INTERVIEW_JSON",
+    "interview_report_json": "INTERVIEW_REPORT_JSON",
+    "existing_summary_json": "EXISTING_SUMMARY_JSON",
+    "turns_json": "SESSION_TURNS_JSON",
+    "advice": "COACH_ADVICE",
+    "session_summary_json": "SESSION_SUMMARY_JSON",
+    "existing_memories_json": "EXISTING_MEMORIES_JSON",
 }
 
 _PLACEHOLDER_RE = re.compile(r"\[\[([a-z_]+)\]\]")

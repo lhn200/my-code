@@ -1,6 +1,7 @@
 from fastapi.testclient import TestClient
 
 from app.config import Settings
+from app.db import SCHEMA_VERSION
 from app.main import create_app
 
 
@@ -9,7 +10,7 @@ def test_health_reports_schema(client: TestClient) -> None:
     assert response.status_code == 200
     body = response.json()
     assert body["status"] == "ok"
-    assert body["schema_version"] == 1
+    assert body["schema_version"] == SCHEMA_VERSION
     assert isinstance(body["fts5_enabled"], bool)
 
 

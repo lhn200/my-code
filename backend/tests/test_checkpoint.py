@@ -7,6 +7,7 @@ from fastapi.testclient import TestClient
 from app.checkpoint.sqlite import new_thread_id, open_checkpointer, thread_config
 from app.graph.main import build_initial_state, build_main_graph
 from app.main import create_app
+from tests.auth_utils import authenticate
 from tests.fakes import (
     DEFAULT_HANDLERS,
     FakeModels,
@@ -33,6 +34,7 @@ def _create_run(client: TestClient, goal: str = "后端") -> str:
 def test_state_query_next_node_and_snapshot_read(settings) -> None:
     models = FakeModels(DEFAULT_HANDLERS)
     with TestClient(create_app(settings, model_factory=models.factory)) as client:
+        authenticate(client)
         thread_id = _create_run(client)
         current = client.get(f"/api/runs/{thread_id}")
         assert current.status_code == 200
@@ -61,6 +63,7 @@ def test_state_query_next_node_and_snapshot_read(settings) -> None:
 def test_checkpoint_from_other_thread_returns_404(settings) -> None:
     models = FakeModels(DEFAULT_HANDLERS)
     with TestClient(create_app(settings, model_factory=models.factory)) as client:
+        authenticate(client)
         first = _create_run(client, "后端")
         second = _create_run(client, "前端")
         snapshot_id = client.get(f"/api/runs/{second}/snapshots").json()["snapshots"][-1][
@@ -73,9 +76,11 @@ def test_checkpoint_from_other_thread_returns_404(settings) -> None:
 def test_state_survives_app_restart(settings) -> None:
     models = FakeModels(DEFAULT_HANDLERS)
     with TestClient(create_app(settings, model_factory=models.factory)) as client:
+        authenticate(client)
         thread_id = _create_run(client)
     restarted_models = FakeModels(DEFAULT_HANDLERS)
     with TestClient(create_app(settings, model_factory=restarted_models.factory)) as client:
+        authenticate(client)
         response = client.get(f"/api/runs/{thread_id}")
         assert response.status_code == 200
         assert response.json()["result"]["run_status"] == "succeeded"
@@ -85,6 +90,7 @@ def test_state_survives_app_restart(settings) -> None:
 def test_resume_completed_run_does_not_repeat_work(settings) -> None:
     models = FakeModels(DEFAULT_HANDLERS)
     with TestClient(create_app(settings, model_factory=models.factory)) as client:
+        authenticate(client)
         thread_id = _create_run(client)
         analyst_calls = models.calls("job_analyst")
         reviewer_calls = models.calls("resume_reviewer")
@@ -100,11 +106,13 @@ def test_variants_survive_app_restart(settings) -> None:
         "resume_reviewer": make_reviewer_handler({"Backend Engineer": 60}),
     }
     with TestClient(create_app(settings, model_factory=FakeModels(handlers).factory)) as client:
+        authenticate(client)
         thread_id = _create_run(client)
 
     with TestClient(
         create_app(settings, model_factory=FakeModels(DEFAULT_HANDLERS).factory)
     ) as client:
+        authenticate(client)
         body = client.get(f"/api/runs/{thread_id}").json()
 
     jobs = {job["job_id"]: job for job in body["result"]["jobs"]}

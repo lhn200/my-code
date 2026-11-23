@@ -1,4 +1,4 @@
-"""Main workflow graph: intake -> supervisor -> workers -> coach."""
+"""Main workflow graph: intake -> supervisor -> workers -> coach <-> interview."""
 
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ from langgraph.graph import END, START, StateGraph
 from langgraph.types import Command, Send
 
 from ..errors import field_error
-from ..state import AgentState, review_key
+from ..state import AgentState, ensure_memory_defaults, review_key
 from .context import GraphContext
 from .job_analysis import build_job_analysis_graph
 from .nodes import (
@@ -17,7 +17,9 @@ from .nodes import (
     current_review,
     current_variant,
     current_variant_version,
+    interview_attempts_used,
     run_coach,
+    run_interview,
     run_optimize_resume,
     run_review_job,
 )
@@ -128,6 +130,20 @@ def build_initial_state(
     }
 
 
+def _session_context(state: Mapping[str, Any]) -> dict[str, Any]:
+    """Session memory slice passed to worker nodes (never includes user_id)."""
+    scoped = ensure_memory_defaults(state)
+    return {
+        "session_turns": scoped["session_turns"],
+        "session_summary": scoped["session_summary"],
+        "session_summary_version": scoped["session_summary_version"],
+        "session_summary_updated_at": scoped["session_summary_updated_at"],
+        "summarized_through_turn": scoped["summarized_through_turn"],
+        "memory_context": scoped["memory_context"],
+        "memory_context_meta": scoped["memory_context_meta"],
+    }
+
+
 def _review_payload(state: Mapping[str, Any], job: Mapping[str, Any]) -> dict[str, Any]:
     job_id = job["job_id"]
     variant = current_variant(state, job_id)
@@ -149,7 +165,19 @@ def _review_payload(state: Mapping[str, Any], job: Mapping[str, Any]) -> dict[st
         "variant_version": version,
         "round": round_entry.get("round") if round_entry else None,
         "score_before": round_entry.get("score_before") if round_entry else 0,
+        "session": _session_context(state),
     }
+
+
+def _current_interview_report(
+    state: Mapping[str, Any], job_id: str
+) -> dict[str, Any] | None:
+    report = (state.get("interview_reports") or {}).get(job_id)
+    if not report:
+        return None
+    if int(report.get("variant_version", 0)) != current_variant_version(state, job_id):
+        return None
+    return report
 
 
 def _optimize_payload(state: Mapping[str, Any], job: Mapping[str, Any]) -> dict[str, Any]:
@@ -164,6 +192,8 @@ def _optimize_payload(state: Mapping[str, Any], job: Mapping[str, Any]) -> dict[
         "current_variant_version": current_variant_version(state, job_id),
         "round": attempts_used(state, job_id) + 1,
         "score_before": int(review.get("score", 0)),
+        "interview_report": _current_interview_report(state, job_id) or {},
+        "session": _session_context(state),
     }
 
 
@@ -223,6 +253,10 @@ def build_main_graph(
         error = result.get("error")
         if error:
             update["errors"] = [error]
+        if result.get("context_meta"):
+            update["context_budget_meta"] = {
+                f"analyze_job:{payload['job_id']}": result["context_meta"]
+            }
         return update
 
     async def review_job(payload: Mapping[str, Any]) -> dict[str, Any]:
@@ -231,13 +265,56 @@ def build_main_graph(
     async def optimize_resume(payload: Mapping[str, Any]) -> dict[str, Any]:
         return await run_optimize_resume(payload, context)
 
-    async def coach(state: Mapping[str, Any]) -> dict[str, Any]:
-        return await run_coach(state, context)
+    async def interview(payload: Mapping[str, Any]) -> dict[str, Any]:
+        return await run_interview(payload, context)
+
+    def interview_sends(state: Mapping[str, Any]) -> list[Send]:
+        jobs = sorted(state.get("jobs", []), key=lambda item: item["job_id"])
+        profiles = state.get("job_profiles", {})
+        reports = state.get("interview_reports") or {}
+        sends: list[Send] = []
+        for job in jobs:
+            job_id = job["job_id"]
+            if profiles.get(job_id, {}).get("status") != "ok":
+                continue
+            review = current_review(state, job_id)
+            if not review or review.get("status") != "ok":
+                continue
+            used = interview_attempts_used(state, job_id)
+            if used >= settings.max_interview_rounds:
+                continue
+            report = _current_interview_report(state, job_id)
+            if report and report.get("status") == "completed":
+                score = report.get("overall_score")
+                if score is None or float(score) >= settings.interview_score_threshold:
+                    continue
+            variant = current_variant(state, job_id)
+            sends.append(
+                Send(
+                    "interview",
+                    {
+                        "job_id": job_id,
+                        "goal": state.get("goal", ""),
+                        "profile": profiles.get(job_id) or {},
+                        "review": review,
+                        "resume_text": variant["text"] if variant else state.get("resume_text", ""),
+                        "variant_version": current_variant_version(state, job_id),
+                        "round": used + 1,
+                        "prior_report": reports.get(job_id),
+                        "session": _session_context(state),
+                    },
+                )
+            )
+        return sends
+
+    async def coach(state: Mapping[str, Any]) -> Any:
+        update = await run_coach(state, context)
+        sends = interview_sends(state)
+        if sends:
+            return Command(update=update, goto=sends)
+        return Command(update=update, goto=END)
 
     def supervisor(state: Mapping[str, Any]) -> Command:
-        if state.get("advice"):
-            return Command(goto=END)
-
         jobs = sorted(state.get("jobs", []), key=lambda item: item["job_id"])
         profiles = state.get("job_profiles", {})
         reviews = state.get("reviews", {})
@@ -279,7 +356,15 @@ def build_main_graph(
             review = current_review(state, job_id)
             if not review or review.get("status") != "ok":
                 continue
-            if int(review.get("score", 0)) >= threshold:
+            interview = _current_interview_report(state, job_id)
+            interview_low = bool(
+                interview
+                and interview.get("status") == "completed"
+                and interview.get("overall_score") is not None
+                and float(interview["overall_score"])
+                < settings.interview_score_threshold
+            )
+            if int(review.get("score", 0)) >= threshold and not interview_low:
                 continue
             if attempts_used(state, job_id) >= max_rounds:
                 continue
@@ -295,6 +380,7 @@ def build_main_graph(
     builder.add_node("analyze_job", analyze_job)
     builder.add_node("review_job", review_job)
     builder.add_node("optimize_resume", optimize_resume)
+    builder.add_node("interview", interview)
     builder.add_node("coach", coach)
 
     builder.add_edge(START, "intake")
@@ -302,7 +388,7 @@ def build_main_graph(
     builder.add_edge("analyze_job", "supervisor")
     builder.add_edge("review_job", "supervisor")
     builder.add_edge("optimize_resume", "supervisor")
-    builder.add_edge("coach", END)
+    builder.add_edge("interview", "supervisor")
     return builder.compile(
         checkpointer=checkpointer,
         interrupt_after=interrupt_after or None,

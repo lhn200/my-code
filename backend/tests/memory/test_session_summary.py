@@ -9,12 +9,15 @@ import pytest
 from app.config import Settings
 from app.db import init_db
 from app.memory.session_memory import (
+    MAX_SESSION_TURNS,
     SUMMARY_KEYS,
     SessionMemoryProjection,
     SessionMemoryService,
     SessionNotFound,
     SummaryConflict,
     SummaryFailed,
+    append_turn,
+    pending_turn_count,
 )
 from app.memory.session_store import InMemorySessionStateStore
 
@@ -341,6 +344,36 @@ def test_summarize_if_due_summarizes_six(settings: Settings) -> None:
     assert summarizer.calls[0][1] == [1, 2, 3, 4, 5, 6]
 
 
+def test_summary_survives_service_restart(settings: Settings) -> None:
+    store = InMemorySessionStateStore()
+    store.seed("t1", "u1", state_with([turn(number) for number in range(1, 13)]))
+    build_service(store, settings, FakeSummarizer()).summarize_if_due("t1", "u1")
+
+    view = build_service(store, settings, FakeSummarizer()).get_summary("t1", "u1")
+
+    assert view.summarized is True
+    assert view.version == 1
+    assert view.summarized_through_turn == 6
+    assert view.summary == BODY
+
+
+def test_threads_of_same_user_keep_summaries_separate(settings: Settings) -> None:
+    store = InMemorySessionStateStore()
+    store.seed("t1", "u1", state_with([turn(number) for number in range(1, 13)]))
+    store.seed("t2", "u1", state_with([turn(1)]))
+    service = build_service(store, settings, FakeSummarizer())
+
+    service.summarize_if_due("t1", "u1")
+
+    assert service.get_summary("t1", "u1").version == 1
+    other = service.get_summary("t2", "u1")
+    assert other.summarized is False
+    assert other.version == 0
+    assert other.summary is None
+
+
+
+
 def test_regenerate_rejects_other_user(settings: Settings) -> None:
     store = InMemorySessionStateStore()
     store.seed("t1", "u1", state_with([turn(1)]))
@@ -348,3 +381,48 @@ def test_regenerate_rejects_other_user(settings: Settings) -> None:
 
     with pytest.raises(SessionNotFound):
         service.regenerate("t1", "u2")
+
+
+def test_append_turn_pairs_user_input_and_output() -> None:
+    updated = append_turn({}, user="我想转数据分析", assistant="建议先补 SQL 项目", created_at=NOW_ISO)
+
+    assert updated["session_turns"] == [
+        {
+            "turn": 1,
+            "user": "我想转数据分析",
+            "assistant": "建议先补 SQL 项目",
+            "created_at": NOW_ISO,
+        }
+    ]
+    assert pending_turn_count(updated) == 1
+
+
+def test_append_turn_does_not_mutate_input() -> None:
+    state = state_with([turn(1)])
+
+    append_turn(state, user="新输入", assistant="新输出")
+
+    assert len(state["session_turns"]) == 1
+
+
+def test_append_turn_is_bounded() -> None:
+    state = state_with([turn(number) for number in range(1, MAX_SESSION_TURNS + 1)])
+
+    updated = append_turn(state, user="最后一轮输入", assistant="最后一轮输出")
+
+    assert len(updated["session_turns"]) == MAX_SESSION_TURNS
+    assert updated["session_turns"][0]["turn"] == 2
+    assert updated["session_turns"][-1]["turn"] == MAX_SESSION_TURNS + 1
+
+
+def test_pending_turn_count_excludes_summarized_turns() -> None:
+    state = state_with([turn(number) for number in range(1, 8)], through=5)
+
+    assert pending_turn_count(state) == 2
+
+
+def test_append_turn_skips_blank_pair() -> None:
+    updated = append_turn({}, user="   ", assistant="")
+
+    assert updated["session_turns"] == []
+

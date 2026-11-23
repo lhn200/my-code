@@ -13,6 +13,7 @@ class ApiError(Exception):
         message: str,
         fields: Iterable[Mapping[str, str]] | None = None,
         thread_id: str | None = None,
+        headers: Mapping[str, str] | None = None,
     ) -> None:
         super().__init__(message)
         self.status_code = status_code
@@ -20,6 +21,7 @@ class ApiError(Exception):
         self.message = message
         self.fields = [dict(field) for field in (fields or [])]
         self.thread_id = thread_id
+        self.headers = dict(headers or {})
 
     def payload(self) -> dict[str, Any]:
         body: dict[str, Any] = {
@@ -53,6 +55,35 @@ def thread_not_found(thread_id: str) -> ApiError:
 
 def snapshot_not_found(checkpoint_id: str) -> ApiError:
     return ApiError(404, "snapshot_not_found", f"checkpoint {checkpoint_id} was not found")
+
+
+def auth_error(code: str, message: str) -> ApiError:
+    return ApiError(401, code, message, headers={"WWW-Authenticate": "Bearer"})
+
+
+def invalid_credentials() -> ApiError:
+    return ApiError(401, "invalid_credentials", "email or password is incorrect")
+
+
+def email_taken() -> ApiError:
+    return ApiError(409, "email_taken", "this email is not available")
+
+
+def rate_limited(retry_after: int) -> ApiError:
+    return ApiError(
+        429,
+        "rate_limited",
+        "too many login attempts; try again later",
+        headers={"Retry-After": str(max(retry_after, 1))},
+    )
+
+
+def not_trashed() -> ApiError:
+    return ApiError(409, "not_trashed", "session is not in the trash")
+
+
+def session_not_found(thread_id: str) -> ApiError:
+    return ApiError(404, "thread_not_found", f"run {thread_id} was not found")
 
 
 def internal_error(thread_id: str | None = None) -> ApiError:
@@ -110,8 +141,14 @@ def validation_fields(errors: Iterable[Mapping[str, Any]]) -> list[dict[str, str
 
 __all__ = [
     "ApiError",
+    "auth_error",
+    "email_taken",
     "field_error",
     "internal_error",
+    "invalid_credentials",
+    "not_trashed",
+    "rate_limited",
+    "session_not_found",
     "snapshot_not_found",
     "thread_not_found",
     "too_many_jobs",

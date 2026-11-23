@@ -146,6 +146,51 @@ def optimizer_handler(messages: Any) -> str:
     )
 
 
+def make_interviewer_handler(
+    scores: Mapping[str, int] | None = None,
+    improved_score: int = 85,
+    always_low: bool = False,
+) -> Handler:
+    score_map = dict(scores or {})
+
+    def handler(messages: Any) -> str:
+        human = messages[-1][1]
+        profile = json_block(human, "JOB_PROFILE_JSON") or {}
+        title = profile.get("title", "")
+        prior = json_block(human, "PRIOR_INTERVIEW_JSON") or {}
+        if always_low:
+            score = 60
+        elif prior:
+            score = improved_score
+        else:
+            score = score_map.get(title, 80)
+        gaps = [] if score >= 70 else ["Kubernetes"]
+        return json.dumps(
+            {
+                "overall_score": score,
+                "dimension_averages": {
+                    "skills": score,
+                    "experience": score,
+                    "projects": score,
+                    "education": score,
+                },
+                "highlights": ["表达清晰"],
+                "red_flags": gaps,
+                "improvements": ["补充项目量化结果"] if gaps else [],
+                "requirement_gaps": gaps,
+                "answered_count": 5,
+                "planned_count": 5,
+            },
+            ensure_ascii=False,
+        )
+
+    return handler
+
+
+def interviewer_handler(messages: Any) -> str:
+    return make_interviewer_handler()(messages)
+
+
 def coach_handler(messages: Any) -> str:
     human = messages[-1][1]
     summaries = json_block(human, "JOB_RESULTS_JSON") or []
@@ -198,6 +243,7 @@ DEFAULT_HANDLERS: dict[str, Handler] = {
     "resume_reviewer": make_reviewer_handler(),
     "resume_optimizer": optimizer_handler,
     "career_coach": coach_handler,
+    "interviewer": interviewer_handler,
 }
 
 
@@ -207,8 +253,10 @@ __all__ = [
     "FakeModels",
     "analyst_handler",
     "coach_handler",
+    "interviewer_handler",
     "json_block",
     "make_context",
+    "make_interviewer_handler",
     "make_reviewer_handler",
     "optimizer_handler",
     "untrusted_block",

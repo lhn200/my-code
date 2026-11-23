@@ -19,6 +19,7 @@ def create_context(
         settings.models_config_path,
         api_key=settings.llm_api_key,
         base_url=settings.llm_base_url,
+        respect_env_proxy=settings.llm_respect_env_proxy,
         model_factory=model_factory,
     )
     return GraphContext(settings=settings, router=router, prompts=prompts)

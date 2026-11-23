@@ -1,20 +1,29 @@
 from __future__ import annotations
 
+from datetime import datetime, timedelta, timezone
+
 import pytest
 from fastapi.testclient import TestClient
 
 from app.main import create_app
 from app.services.interview_reports import InterviewReportError, attach_interview_report
+from tests.auth_utils import authenticate
 from tests.fakes import DEFAULT_HANDLERS, FakeModels, make_reviewer_handler
 
 JOB = {"job_id": "job-1", "title": "Backend Engineer", "original_position_text": "Python"}
 
 
-def _summary(interview_thread_id: str = "it-1", status: str = "completed") -> dict:
+def _timestamp(days: int) -> str:
+    return (datetime.now(timezone.utc) + timedelta(days=days)).isoformat(timespec="seconds")
+
+
+def _summary(
+    interview_thread_id: str = "it-1", status: str = "completed", days: int = 1
+) -> dict:
     return {
         "interview_thread_id": interview_thread_id,
         "status": status,
-        "generated_at": "2026-02-01T10:00:00",
+        "generated_at": _timestamp(days),
         "dimension_averages": {"clarity": 80.0},
         "overall_score": 80.0,
         "highlights": ["架构解释清晰"],
@@ -38,6 +47,7 @@ def _run(client: TestClient) -> str:
 async def test_attach_report_updates_state_and_advice(settings) -> None:
     models = FakeModels(DEFAULT_HANDLERS)
     with TestClient(create_app(settings, model_factory=models.factory)) as client:
+        authenticate(client)
         thread_id = _run(client)
         before = client.get(f"/api/runs/{thread_id}/snapshots").json()["snapshots"]
         old_checkpoint = before[0]["checkpoint_id"]
@@ -70,6 +80,7 @@ async def test_attach_report_updates_state_and_advice(settings) -> None:
 async def test_attach_report_is_idempotent(settings) -> None:
     models = FakeModels(DEFAULT_HANDLERS)
     with TestClient(create_app(settings, model_factory=models.factory)) as client:
+        authenticate(client)
         thread_id = _run(client)
         await attach_interview_report(
             client.app.state.graph, client.app.state.context, thread_id, "job-1", _summary()
@@ -86,6 +97,7 @@ async def test_attach_report_is_idempotent(settings) -> None:
 async def test_attach_report_replace_with_newer_interview(settings) -> None:
     models = FakeModels(DEFAULT_HANDLERS)
     with TestClient(create_app(settings, model_factory=models.factory)) as client:
+        authenticate(client)
         thread_id = _run(client)
         await attach_interview_report(
             client.app.state.graph,
@@ -94,8 +106,7 @@ async def test_attach_report_replace_with_newer_interview(settings) -> None:
             "job-1",
             _summary("it-1", "abandoned"),
         )
-        newer = _summary("it-2", "completed")
-        newer["generated_at"] = "2026-02-02T10:00:00"
+        newer = _summary("it-2", "completed", days=2)
         result = await attach_interview_report(
             client.app.state.graph, client.app.state.context, thread_id, "job-1", newer
         )
@@ -109,6 +120,7 @@ async def test_attach_report_replace_with_newer_interview(settings) -> None:
 async def test_attach_report_rejects_unknown_job_or_thread(settings) -> None:
     models = FakeModels(DEFAULT_HANDLERS)
     with TestClient(create_app(settings, model_factory=models.factory)) as client:
+        authenticate(client)
         thread_id = _run(client)
         with pytest.raises(InterviewReportError) as excinfo:
             await attach_interview_report(
@@ -141,6 +153,7 @@ async def test_advice_refresh_failure_keeps_report_and_old_advice(settings, monk
         "app.services.interview_reports.run_coach", failing_coach
     )
     with TestClient(create_app(settings, model_factory=models.factory)) as client:
+        authenticate(client)
         thread_id = _run(client)
         old_advice = client.get(f"/api/runs/{thread_id}").json()["result"]["advice"]
 
@@ -161,6 +174,7 @@ async def test_review_isolation_after_report_attach(settings) -> None:
         {**DEFAULT_HANDLERS, "resume_reviewer": make_reviewer_handler({"Backend Engineer": 60})}
     )
     with TestClient(create_app(settings, model_factory=models.factory)) as client:
+        authenticate(client)
         thread_id = _run(client)
         before = client.get(f"/api/runs/{thread_id}").json()["result"]
         await attach_interview_report(

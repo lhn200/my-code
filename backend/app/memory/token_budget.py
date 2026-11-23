@@ -39,14 +39,18 @@ def _estimate(text: str) -> int:
 
 
 def count_tokens(text: str) -> int:
-    """Return an estimated token count, applying a 1.15 safety margin."""
+    """Return a token estimate; only the fallback path adds the safety margin."""
+    if text is None:
+        return 0
+    if not isinstance(text, str):
+        text = str(text)
     if not text:
         return 0
     encoding = _resolve_encoding()
     if encoding is None:
         return math.ceil(_estimate(text) * _SAFETY_FACTOR)
     try:
-        return math.ceil(len(encoding.encode(text)) * _SAFETY_FACTOR)
+        return len(encoding.encode(text))
     except Exception as exc:  # pragma: no cover - defensive
         logger.warning("token encoding failed, fallback to character estimate: %s", exc)
-        return len(text)
+        return max(1, len(text))

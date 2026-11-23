@@ -8,6 +8,7 @@ from langgraph.graph import END, START, StateGraph
 from pydantic import BaseModel, Field, field_validator
 
 from ..llm import call_json
+from ..memory.context_assembler import ContextOverflow
 from ..state import JobProfile
 from .context import GraphContext
 
@@ -18,6 +19,7 @@ class JobAnalysisState(TypedDict, total=False):
     job_text: str
     profile: dict[str, Any]
     error: dict[str, Any] | None
+    context_meta: dict[str, Any]
 
 
 class JobAnalysisOutput(BaseModel):
@@ -59,10 +61,13 @@ def build_job_analysis_graph(context: GraphContext):
         job_id = state.get("job_id", "")
         title = state.get("title", "")
         job_text = state.get("job_text", "")
+        meta: dict[str, Any] | None = None
         try:
             async with context.semaphore:  # type: ignore[union-attr]
-                messages = context.messages(
-                    "job_analyst", {"job_title": title, "job_text": job_text}
+                messages, meta = context.prepare(
+                    "job_analyst",
+                    {"memory_context": []},
+                    {"job_title": title, "job_text": job_text},
                 )
                 output = await call_json(
                     context.model("job_analyst"),
@@ -70,9 +75,25 @@ def build_job_analysis_graph(context: GraphContext):
                     JobAnalysisOutput,
                     attempts=2,
                 )
+        except ContextOverflow as exc:
+            reason = "context budget exceeded before job analysis"
+            return {
+                "profile": failed_profile(job_id, title, reason),
+                "error": {
+                    "stage": "analyze_job",
+                    "job_id": job_id,
+                    "code": "context_overflow",
+                    "message": reason,
+                },
+                "context_meta": {
+                    "role": "job_analyst",
+                    "overflow": True,
+                    **exc.meta,
+                },
+            }
         except Exception as exc:
             reason = f"job analysis failed: {exc}"
-            return {
+            update: dict[str, Any] = {
                 "profile": failed_profile(job_id, title, reason),
                 "error": {
                     "stage": "analyze_job",
@@ -81,6 +102,9 @@ def build_job_analysis_graph(context: GraphContext):
                     "message": reason,
                 },
             }
+            if meta is not None:
+                update["context_meta"] = meta
+            return update
 
         if not output.is_job_posting:
             reason = output.reason or "the text is not recognizable as a job posting"
@@ -92,6 +116,7 @@ def build_job_analysis_graph(context: GraphContext):
                     "code": "job_not_recognized",
                     "message": reason,
                 },
+                "context_meta": meta or {},
             }
 
         if _no_requirements(output):
@@ -104,6 +129,7 @@ def build_job_analysis_graph(context: GraphContext):
                     "code": "job_no_requirements",
                     "message": reason,
                 },
+                "context_meta": meta or {},
             }
 
         profile = JobProfile(
@@ -116,7 +142,7 @@ def build_job_analysis_graph(context: GraphContext):
             keywords=output.keywords,
             status="ok",
         )
-        return {"profile": profile.model_dump(), "error": None}
+        return {"profile": profile.model_dump(), "error": None, "context_meta": meta or {}}
 
     builder = StateGraph(JobAnalysisState)
     builder.add_node("analyze", analyze)

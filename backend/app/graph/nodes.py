@@ -1,14 +1,17 @@
-"""Business nodes: review, optimize and coach."""
+"""Business nodes: review, optimize, interview and coach."""
 
 from __future__ import annotations
 
 import logging
+from datetime import datetime, timezone
 from typing import Any, Mapping
 
 from pydantic import BaseModel, Field
 
 from ..llm import call_json, call_text
+from ..memory.context_assembler import ContextOverflow
 from ..state import (
+    InterviewReportSummary,
     JobProfile,
     OptimizationRound,
     ResumeVariant,
@@ -32,6 +35,17 @@ class OptimizerOutput(BaseModel):
     variant_text: str = ""
     changes: list[str] = Field(default_factory=list)
     remaining_gaps: list[str] = Field(default_factory=list)
+
+
+class InterviewOutput(BaseModel):
+    overall_score: float = Field(ge=0, le=100)
+    dimension_averages: dict[str, float] = Field(default_factory=dict)
+    highlights: list[str] = Field(default_factory=list)
+    red_flags: list[str] = Field(default_factory=list)
+    improvements: list[str] = Field(default_factory=list)
+    requirement_gaps: list[str] = Field(default_factory=list)
+    answered_count: int = Field(default=0, ge=0)
+    planned_count: int = Field(default=0, ge=0)
 
 
 def current_variant_version(state: Mapping[str, Any], job_id: str) -> int:
@@ -62,6 +76,10 @@ def rounds_used(state: Mapping[str, Any], job_id: str) -> int:
 
 def attempts_used(state: Mapping[str, Any], job_id: str) -> int:
     return int(state.get("optimization_attempts", {}).get(job_id, 0))
+
+
+def interview_attempts_used(state: Mapping[str, Any], job_id: str) -> int:
+    return int(state.get("interview_attempts", {}).get(job_id, 0))
 
 
 def job_summaries(state: Mapping[str, Any], settings: Any) -> list[dict[str, Any]]:
@@ -122,24 +140,46 @@ async def run_review_job(payload: Mapping[str, Any], context: GraphContext) -> d
     job_id = str(payload["job_id"])
     version = int(payload.get("variant_version", 0))
     profile = payload.get("profile") or {}
+    session = payload.get("session") or {}
+    label = f"review_job:{job_id}:{version}"
+    meta: dict[str, Any] | None = None
     try:
         async with context.semaphore:  # type: ignore[union-attr]
-            messages = context.messages(
+            messages, meta = context.prepare(
                 "resume_reviewer",
+                session,
                 {
                     "goal": payload.get("goal", ""),
                     "profile_json": profile,
                     "resume_text": payload.get("resume_text", ""),
                 },
+                job_profile=profile,
             )
             output = await call_json(
                 context.model("resume_reviewer"), messages, ReviewOutput, attempts=2
             )
         review = make_review_result(output.model_dump(), job_id, version)
+    except ContextOverflow as exc:
+        message = "context budget exceeded before resume review"
+        failed = _review_failure(job_id, version, message)
+        return {
+            "reviews": {review_key(job_id, version): failed.model_dump()},
+            "errors": [
+                {
+                    "stage": "review_job",
+                    "job_id": job_id,
+                    "code": "context_overflow",
+                    "message": message,
+                }
+            ],
+            "context_budget_meta": {
+                label: {"role": "resume_reviewer", "overflow": True, **exc.meta}
+            },
+        }
     except Exception as exc:
         message = f"resume review failed: {exc}"
         failed = _review_failure(job_id, version, message)
-        return {
+        update: dict[str, Any] = {
             "reviews": {review_key(job_id, version): failed.model_dump()},
             "errors": [
                 {
@@ -150,8 +190,13 @@ async def run_review_job(payload: Mapping[str, Any], context: GraphContext) -> d
                 }
             ],
         }
+        if meta is not None:
+            update["context_budget_meta"] = {label: meta}
+        return update
 
     update: dict[str, Any] = {"reviews": {review_key(job_id, version): review.model_dump()}}
+    if meta is not None:
+        update["context_budget_meta"] = {label: meta}
     round_number = payload.get("round")
     if round_number is not None:
         round_entry = OptimizationRound(
@@ -170,16 +215,23 @@ async def run_optimize_resume(payload: Mapping[str, Any], context: GraphContext)
     round_number = int(payload.get("round", 1))
     current_version = int(payload.get("current_variant_version", 0))
     score_before = int(payload.get("score_before", 0))
+    profile = payload.get("profile") or {}
+    session = payload.get("session") or {}
+    label = f"optimize_resume:{job_id}:{round_number}"
+    meta: dict[str, Any] | None = None
     try:
         async with context.semaphore:  # type: ignore[union-attr]
-            messages = context.messages(
+            messages, meta = context.prepare(
                 "resume_optimizer",
+                session,
                 {
                     "goal": payload.get("goal", ""),
-                    "profile_json": payload.get("profile") or {},
+                    "profile_json": profile,
                     "review_json": payload.get("review") or {},
                     "baseline_resume": payload.get("resume_text", ""),
+                    "interview_report_json": payload.get("interview_report") or {},
                 },
+                job_profile=profile,
             )
             output = await call_json(
                 context.model("resume_optimizer"), messages, OptimizerOutput, attempts=2
@@ -205,9 +257,25 @@ async def run_optimize_resume(payload: Mapping[str, Any], context: GraphContext)
             score_after=None,
             summary=summary,
         )
+    except ContextOverflow as exc:
+        message = "context budget exceeded before resume optimization"
+        return {
+            "optimization_attempts": {job_id: round_number},
+            "errors": [
+                {
+                    "stage": "optimize_resume",
+                    "job_id": job_id,
+                    "code": "context_overflow",
+                    "message": message,
+                }
+            ],
+            "context_budget_meta": {
+                label: {"role": "resume_optimizer", "overflow": True, **exc.meta}
+            },
+        }
     except Exception as exc:
         message = f"resume optimization failed: {exc}"
-        return {
+        update: dict[str, Any] = {
             "optimization_attempts": {job_id: round_number},
             "errors": [
                 {
@@ -218,11 +286,98 @@ async def run_optimize_resume(payload: Mapping[str, Any], context: GraphContext)
                 }
             ],
         }
+        if meta is not None:
+            update["context_budget_meta"] = {label: meta}
+        return update
 
     return {
         "resume_variants": {job_id: [variant.model_dump()]},
         "optimization_history": [round_entry.model_dump()],
         "optimization_attempts": {job_id: round_number},
+        "context_budget_meta": {label: meta} if meta is not None else {},
+    }
+
+
+async def run_interview(payload: Mapping[str, Any], context: GraphContext) -> dict[str, Any]:
+    job_id = str(payload["job_id"])
+    round_number = int(payload.get("round", 1))
+    variant_version = int(payload.get("variant_version", 0))
+    profile = payload.get("profile") or {}
+    session = payload.get("session") or {}
+    label = f"interview:{job_id}:{round_number}"
+    meta: dict[str, Any] | None = None
+    try:
+        async with context.semaphore:  # type: ignore[union-attr]
+            messages, meta = context.prepare(
+                "interviewer",
+                session,
+                {
+                    "goal": payload.get("goal", ""),
+                    "profile_json": profile,
+                    "review_json": payload.get("review") or {},
+                    "resume_text": payload.get("resume_text", ""),
+                    "prior_interview_json": payload.get("prior_report") or {},
+                },
+                job_profile=profile,
+            )
+            output = await call_json(
+                context.model("interviewer"), messages, InterviewOutput, attempts=2
+            )
+        report = InterviewReportSummary(
+            job_id=job_id,
+            interview_thread_id=f"auto-{job_id}-{round_number}",
+            status="completed",
+            generated_at=datetime.now(timezone.utc).isoformat(timespec="seconds"),
+            variant_version=variant_version,
+            dimension_averages={
+                key: max(0.0, min(100.0, float(value)))
+                for key, value in output.dimension_averages.items()
+            },
+            overall_score=max(0.0, min(100.0, float(output.overall_score))),
+            highlights=output.highlights,
+            red_flags=output.red_flags,
+            improvements=output.improvements,
+            requirement_gaps=output.requirement_gaps,
+            answered_count=output.answered_count,
+            planned_count=output.planned_count,
+        )
+    except ContextOverflow as exc:
+        message = "context budget exceeded before interview"
+        return {
+            "interview_attempts": {job_id: round_number},
+            "errors": [
+                {
+                    "stage": "interview",
+                    "job_id": job_id,
+                    "code": "context_overflow",
+                    "message": message,
+                }
+            ],
+            "context_budget_meta": {
+                label: {"role": "interviewer", "overflow": True, **exc.meta}
+            },
+        }
+    except Exception as exc:
+        message = f"auto interview failed: {exc}"
+        update: dict[str, Any] = {
+            "interview_attempts": {job_id: round_number},
+            "errors": [
+                {
+                    "stage": "interview",
+                    "job_id": job_id,
+                    "code": "interview_failed",
+                    "message": message,
+                }
+            ],
+        }
+        if meta is not None:
+            update["context_budget_meta"] = {label: meta}
+        return update
+
+    return {
+        "interview_reports": {job_id: report.model_dump()},
+        "interview_attempts": {job_id: round_number},
+        "context_budget_meta": {label: meta} if meta is not None else {},
     }
 
 
@@ -284,10 +439,12 @@ async def run_coach(state: Mapping[str, Any], context: GraphContext) -> dict[str
     summaries = job_summaries(state, settings)
     reports = state.get("interview_reports") or {}
     advice: str
+    meta: dict[str, Any] | None = None
     try:
         async with context.semaphore:  # type: ignore[union-attr]
-            messages = context.messages(
+            messages, meta = context.prepare(
                 "career_coach",
+                state,
                 {
                     "goal": state.get("goal", ""),
                     "job_summaries_json": summaries,
@@ -295,16 +452,23 @@ async def run_coach(state: Mapping[str, Any], context: GraphContext) -> dict[str
                 },
             )
             advice = await call_text(context.model("career_coach"), messages, attempts=2)
+    except ContextOverflow:
+        logger.warning("coach context overflow, using deterministic advice")
+        advice = _fallback_advice(state, settings)
     except Exception as exc:
         logger.warning("career coach model call failed, using deterministic advice: %s", exc)
         advice = _fallback_advice(state, settings)
-    return {
+    update: dict[str, Any] = {
         "advice": advice,
         "run_status": compute_run_status(state, settings),
     }
+    if meta is not None:
+        update["context_budget_meta"] = {"coach": meta}
+    return update
 
 
 __all__ = [
+    "InterviewOutput",
     "OptimizerOutput",
     "ReviewOutput",
     "attempts_used",
@@ -312,9 +476,11 @@ __all__ = [
     "current_review",
     "current_variant",
     "current_variant_version",
+    "interview_attempts_used",
     "job_summaries",
     "rounds_used",
     "run_coach",
+    "run_interview",
     "run_optimize_resume",
     "run_review_job",
 ]

@@ -30,3 +30,6 @@ dist/
 .screenshots/
 .DS_Store
 Thumbs.db
+
+# OpenSpec working docs
+openspec/

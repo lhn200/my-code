@@ -13,6 +13,7 @@ from typing import Any, Callable, Mapping, Protocol, Sequence
 
 from ..config import Settings
 from ..db import connect
+from ..state import ensure_memory_defaults
 from .session_store import SessionSnapshot, SessionStateStore
 
 logger = logging.getLogger(__name__)
@@ -24,6 +25,8 @@ SUMMARY_KEYS: tuple[str, ...] = (
     "constraints",
     "decisions",
 )
+
+MAX_SESSION_TURNS = 18
 
 STATUS_IDLE = "idle"
 STATUS_OK = "ok"
@@ -312,7 +315,7 @@ class SessionMemoryService:
         version = _summary_version(state)
         through = _summarized_through(state)
         summary = state.get("session_summary")
-        body = dict(summary) if isinstance(summary, Mapping) else None
+        body = dict(summary) if isinstance(summary, Mapping) and summary else None
         updated_at = state.get("session_summary_updated_at")
         default_status = STATUS_OK if body else STATUS_IDLE
 
@@ -392,6 +395,54 @@ class SessionMemoryService:
 
     def _now_iso(self) -> str:
         return self._clock().astimezone(timezone.utc).isoformat()
+
+
+def append_turn(
+    state: Mapping[str, Any],
+    *,
+    user: str,
+    assistant: str,
+    created_at: str | None = None,
+) -> dict[str, Any]:
+    """Append one complete turn (user input + assistant output).
+
+    Turns are numbered monotonically and capped at ``MAX_SESSION_TURNS`` so the
+    checkpoint never grows without bound. The input state is never mutated.
+    """
+    base = ensure_memory_defaults(state)
+    turns = [
+        dict(turn)
+        for turn in base.get("session_turns") or []
+        if isinstance(turn, Mapping)
+    ]
+    user_text = (user or "").strip()
+    assistant_text = (assistant or "").strip()
+    if not user_text and not assistant_text:
+        return base
+    last = max((_turn_number(turn) for turn in turns), default=0)
+    entry: dict[str, Any] = {
+        "turn": last + 1,
+        "user": user_text,
+        "assistant": assistant_text,
+    }
+    if created_at:
+        entry["created_at"] = created_at
+    turns.append(entry)
+    if len(turns) > MAX_SESSION_TURNS:
+        turns = turns[-MAX_SESSION_TURNS:]
+    return {**base, "session_turns": turns}
+
+
+def pending_turn_count(state: Mapping[str, Any]) -> int:
+    """Count turns that have not been folded into the summary yet."""
+    return len(_pending_turns(state))
+
+
+def _turn_number(turn: Mapping[str, Any]) -> int:
+    try:
+        return int(turn.get("turn", 0))
+    except (TypeError, ValueError):
+        return 0
 
 
 def _summary_version(state: Mapping[str, Any]) -> int:

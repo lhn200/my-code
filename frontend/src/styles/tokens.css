@@ -1,0 +1,100 @@
+/*
+ * 设计 token：档案室 · Career Dossier
+ * 本文件是唯一允许出现颜色字面量的位置；
+ * 其他样式文件只能通过 var(--...) 引用。
+ */
+:root {
+  /* 纸张 */
+  --color-bg: #f2eee4;
+  --color-surface: #faf7ef;
+  --color-surface-muted: #e9e2d3;
+  --color-paper-deep: #e9e2d3;
+
+  /* 墨 */
+  --color-text: #191712;
+  --color-text-muted: #6e6455;
+  --color-ink-2: #4d463a;
+  --color-ink-3: #8a7f6b;
+
+  /* 线 */
+  --color-border: #d8cfbc;
+  --color-border-strong: #b3a68d;
+
+  /* 朱砂 */
+  --color-primary: #b9402a;
+  --color-primary-strong: #8f2c1a;
+  --color-primary-contrast: #fffdf8;
+  --color-danger-wash: #f2dcd3;
+
+  /* 语义色 */
+  --color-success: #3d5a45;
+  --color-success-bg: #e2e9df;
+  --color-warning: #94640f;
+  --color-warning-bg: #f4e6c9;
+  --color-danger: #b9402a;
+  --color-danger-bg: #f2dcd3;
+  --color-moss: #3d5a45;
+  --color-amber: #94640f;
+  --color-indigo: #39566f;
+  --color-indigo-bg: #e0e7ec;
+  --color-placeholder: #b0a58e;
+  --color-on-ink: #f2eee4;
+  --color-on-ink-soft: #c9c0ad;
+  --color-on-ink-muted: #a89a80;
+  --color-on-ink-dim: #8f8572;
+  --color-on-ink-line: #3b352b;
+  --color-on-ink-surface: #262219;
+  --color-header-bg: rgba(242, 238, 228, 0.92);
+  --color-ink-watermark: rgba(255, 255, 255, 0.045);
+  --color-accent-soft: #e8846b;
+  --color-moss-soft: #b9cbbd;
+  --color-amber-soft: #e0c98f;
+
+  /* 焦点与遮罩 */
+  --color-focus: #b9402a;
+  --color-overlay: rgba(25, 23, 18, 0.45);
+  --color-code-bg: #191712;
+  --color-code-text: #f2eee4;
+
+  /* 阴影 */
+  --shadow-sm: 0 1px 0 rgba(25, 23, 18, 0.04);
+  --shadow-md: 0 18px 44px -24px rgba(45, 38, 24, 0.5);
+  --shadow-hard: 3px 3px 0 var(--color-text);
+
+  /* 圆角：近直角 */
+  --radius-sm: 2px;
+  --radius-md: 3px;
+  --radius-lg: 2px;
+
+  /* 间距 */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 40px;
+  --space-8: 48px;
+  --space-9: 64px;
+
+  /* 字号 */
+  --text-xs: 11px;
+  --text-sm: 13px;
+  --text-md: 15px;
+  --text-lg: 20px;
+  --text-xl: 26px;
+  --text-2xl: 34px;
+
+  /* 字体 */
+  --font-sans: "Noto Sans SC", "PingFang SC", "HarmonyOS Sans SC", "Microsoft YaHei", sans-serif;
+  --font-serif: "Noto Serif SC", "Songti SC", "STSong", "SimSun", serif;
+  --font-mono: "IBM Plex Mono", "JetBrains Mono", "Cascadia Code", Consolas, monospace;
+
+  /* 动效 */
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --dur-fast: 180ms;
+  --dur-mid: 400ms;
+  --dur-slow: 800ms;
+
+  --content-max: 1240px;
+}

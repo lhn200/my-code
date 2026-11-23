@@ -4,7 +4,15 @@ from pathlib import Path
 
 import pytest
 
-from app.config.model_router import ModelConfigError, ModelRouter, RoleConfig, load_models_config
+from app.config.model_router import (
+    ModelConfigError,
+    ModelRouter,
+    RoleConfig,
+    has_explicit_proxy,
+    load_models_config,
+)
+
+_PROXY_NAMES = ("HTTPS_PROXY", "https_proxy", "HTTP_PROXY", "http_proxy", "ALL_PROXY", "all_proxy")
 
 
 def _write(path: Path, content: str) -> Path:
@@ -96,3 +104,47 @@ def test_router_uses_factory_and_caches(settings) -> None:
     assert len(created) == 1
     with pytest.raises(ModelConfigError):
         router.get_model("unknown")
+
+
+def _proxy_router(*, respect_env_proxy: bool = True) -> ModelRouter:
+    return ModelRouter(
+        Path("unused.yaml"),
+        configs={"supervisor": RoleConfig(model="kimi-k3", temperature=0.0)},
+        api_key="sk-test",
+        base_url="https://example.invalid/v1",
+        respect_env_proxy=respect_env_proxy,
+    )
+
+
+def test_has_explicit_proxy_only_reads_env(monkeypatch) -> None:
+    for name in _PROXY_NAMES:
+        monkeypatch.delenv(name, raising=False)
+    assert has_explicit_proxy(env={}) is False
+    assert has_explicit_proxy(env={"HTTPS_PROXY": "  "}) is False
+    assert has_explicit_proxy(env={"https_proxy": "http://127.0.0.1:7890"}) is True
+
+
+def test_model_bypasses_system_proxy_without_explicit_config(monkeypatch) -> None:
+    for name in _PROXY_NAMES:
+        monkeypatch.delenv(name, raising=False)
+    model = _proxy_router().get_model("supervisor")
+    assert model.http_client.trust_env is False
+    assert model.http_async_client.trust_env is False
+
+
+def test_explicit_env_proxy_takes_priority(monkeypatch) -> None:
+    for name in _PROXY_NAMES:
+        monkeypatch.delenv(name, raising=False)
+    monkeypatch.setenv("HTTPS_PROXY", "http://127.0.0.1:7890")
+    model = _proxy_router().get_model("supervisor")
+    assert model.http_client is None
+    assert model.http_async_client is None
+
+
+def test_respect_env_proxy_can_be_disabled(monkeypatch) -> None:
+    for name in _PROXY_NAMES:
+        monkeypatch.delenv(name, raising=False)
+    monkeypatch.setenv("HTTPS_PROXY", "http://127.0.0.1:7890")
+    model = _proxy_router(respect_env_proxy=False).get_model("supervisor")
+    assert model.http_client.trust_env is False
+    assert model.http_async_client.trust_env is False
