@@ -238,12 +238,17 @@ def coach_handler(messages: Any) -> str:
     return "\n".join(lines)
 
 
+def coach_chat_handler(_messages: Any) -> str:
+    return "## 建议\n\n1. 先补强岗位缺口。\n2. 用 STAR 结构改写项目描述。"
+
+
 DEFAULT_HANDLERS: dict[str, Handler] = {
     "job_analyst": analyst_handler,
     "resume_reviewer": make_reviewer_handler(),
     "resume_optimizer": optimizer_handler,
     "career_coach": coach_handler,
     "interviewer": interviewer_handler,
+    "coach_chat": coach_chat_handler,
 }
 
 
@@ -252,6 +257,7 @@ __all__ = [
     "FakeChatModel",
     "FakeModels",
     "analyst_handler",
+    "coach_chat_handler",
     "coach_handler",
     "interviewer_handler",
     "json_block",

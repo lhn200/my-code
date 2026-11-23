@@ -34,6 +34,7 @@ async function onLogout(): Promise<void> {
           <RouterLink to="/">创建分析</RouterLink>
           <RouterLink to="/runs">查询会话</RouterLink>
           <RouterLink to="/sessions">会话列表</RouterLink>
+          <RouterLink to="/coach">AI 教练</RouterLink>
           <RouterLink to="/settings/memory">记忆设置</RouterLink>
         </nav>
 

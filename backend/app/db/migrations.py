@@ -8,7 +8,7 @@ from pathlib import Path
 
 from .connection import connect
 
-SCHEMA_VERSION = 3
+SCHEMA_VERSION = 4
 
 _CORE_DDL = """
 CREATE TABLE IF NOT EXISTS user_memories (
@@ -124,6 +124,30 @@ CREATE TABLE IF NOT EXISTS interview_messages (
 
 CREATE UNIQUE INDEX IF NOT EXISTS ux_interview_messages_seq
     ON interview_messages (session_id, seq);
+
+CREATE TABLE IF NOT EXISTS coach_sessions (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL REFERENCES users (id),
+    thread_id TEXT,
+    title TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS ix_coach_sessions_user
+    ON coach_sessions (user_id, updated_at DESC);
+
+CREATE TABLE IF NOT EXISTS coach_messages (
+    id TEXT PRIMARY KEY,
+    session_id TEXT NOT NULL REFERENCES coach_sessions (id) ON DELETE CASCADE,
+    seq INTEGER NOT NULL,
+    role TEXT NOT NULL CHECK (role IN ('user', 'coach')),
+    content TEXT NOT NULL,
+    created_at TEXT NOT NULL
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS ux_coach_messages_seq
+    ON coach_messages (session_id, seq);
 """
 
 _FTS_DDL = """

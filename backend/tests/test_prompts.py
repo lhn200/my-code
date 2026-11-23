@@ -35,11 +35,12 @@ def test_load_all_roles_and_version(settings) -> None:
         "interviewer",
         "interview_questioner",
         "interview_evaluator",
+        "coach_chat",
         "summarizer",
         "memory_extractor",
     }
     assert bundle.version
-    assert len(bundle.versions) == 10
+    assert len(bundle.versions) == 11
 
 
 def test_messages_keep_untrusted_data_out_of_system(settings) -> None:

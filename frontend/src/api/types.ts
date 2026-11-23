@@ -124,6 +124,33 @@ export interface InterviewSessionListResponse {
   items: InterviewSessionPayload[]
 }
 
+export type CoachMessageRole = 'user' | 'coach'
+
+export interface CoachSession {
+  id: string
+  thread_id: string | null
+  title: string
+  message_count: number
+  created_at: string
+  updated_at: string
+}
+
+export interface CoachMessage {
+  id: string
+  role: CoachMessageRole
+  content: string
+  created_at: string
+}
+
+export interface CoachSessionPayload {
+  session: CoachSession
+  messages: CoachMessage[]
+}
+
+export interface CoachSessionListResponse {
+  items: CoachSession[]
+}
+
 export interface JobResult {
   job_id: string
   title: string

@@ -34,6 +34,10 @@ roles:
     provider: openai
     model: kimi-k3
     temperature: 0.0
+  coach_chat:
+    provider: openai
+    model: qwen-plus
+    temperature: 0.5
   summarizer:
     provider: openai
     model: qwen-flash

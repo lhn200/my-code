@@ -17,6 +17,7 @@ ROLES: tuple[str, ...] = (
     "interviewer",
     "interview_questioner",
     "interview_evaluator",
+    "coach_chat",
     "summarizer",
     "memory_extractor",
 )
@@ -53,6 +54,8 @@ UNTRUSTED_PLACEHOLDERS: dict[str, str] = {
     "existing_memories_json": "EXISTING_MEMORIES_JSON",
     "session_meta_json": "INTERVIEW_SESSION_META_JSON",
     "transcript_json": "INTERVIEW_TRANSCRIPT_JSON",
+    "coach_context_json": "COACH_CONTEXT_JSON",
+    "user_message": "USER_MESSAGE",
 }
 
 _PLACEHOLDER_RE = re.compile(r"\[\[([a-z_]+)\]\]")

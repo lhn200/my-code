@@ -6,6 +6,7 @@ import {
 } from 'vue-router'
 
 import { authGuard } from '@/auth/guard'
+import CoachView from '@/views/CoachView.vue'
 import CreateView from '@/views/CreateView.vue'
 import InterviewView from '@/views/InterviewView.vue'
 import LoginView from '@/views/LoginView.vue'
@@ -31,6 +32,12 @@ export const routes: RouteRecordRaw[] = [
     path: '/interviews/:sessionId',
     name: 'interview',
     component: InterviewView,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/coach',
+    name: 'coach',
+    component: CoachView,
     meta: { requiresAuth: true },
   },
   {

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from pydantic import BaseModel, ConfigDict, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 from pydantic_core import PydanticCustomError
 
 
@@ -79,7 +79,49 @@ class InterviewAnswerRequest(BaseModel):
         return value
 
 
+class CoachSessionCreateRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    thread_id: str | None = None
+    title: str = Field(default="", max_length=100)
+
+    @field_validator("thread_id", "title")
+    @classmethod
+    def _normalize(cls, value: str | None) -> str | None:
+        return value.strip() if isinstance(value, str) else value
+
+
+class CoachSessionUpdateRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    thread_id: str | None = None
+    title: str | None = Field(default=None, max_length=100)
+
+    @field_validator("title")
+    @classmethod
+    def _title_not_blank(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        if not value.strip():
+            raise PydanticCustomError("blank", "title must not be blank")
+        return value.strip()
+
+    @field_validator("thread_id")
+    @classmethod
+    def _thread_strip(cls, value: str | None) -> str | None:
+        return value.strip() if isinstance(value, str) else value
+
+
+class CoachMessageRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    content: str
+
+
 __all__ = [
+    "CoachMessageRequest",
+    "CoachSessionCreateRequest",
+    "CoachSessionUpdateRequest",
     "InterviewAnswerRequest",
     "InterviewCreateRequest",
     "JobRequest",

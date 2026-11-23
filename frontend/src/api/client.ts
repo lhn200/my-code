@@ -121,6 +121,11 @@ const KNOWN_CODES: Record<string, string> = {
   interview_generation_failed: '面试官暂时无法响应，请稍后重试',
   interview_no_answers: '请至少回答一道题后再生成报告',
   interview_report_failed: '评估报告生成失败，请稍后重试',
+  coach_session_not_found: '教练会话不存在或已失效',
+  coach_analysis_not_found: '所选分析会话不存在或已删除',
+  coach_message_blank: '消息内容不能为空',
+  coach_message_too_long: '消息过长，请精简后再发送',
+  coach_reply_failed: '教练暂时无法回复，请稍后重试',
   request_timeout: '请求超时',
   network_error: '网络连接失败',
 }
