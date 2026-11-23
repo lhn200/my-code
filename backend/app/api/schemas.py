@@ -52,4 +52,36 @@ class RunRequest(BaseModel):
         return value
 
 
-__all__ = ["JobRequest", "RunRequest"]
+class InterviewCreateRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    thread_id: str
+    job_id: str
+
+    @field_validator("thread_id", "job_id")
+    @classmethod
+    def _not_blank(cls, value: str) -> str:
+        if not isinstance(value, str) or not value.strip():
+            raise PydanticCustomError("blank", "value must not be blank")
+        return value.strip()
+
+
+class InterviewAnswerRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    answer: str
+
+    @field_validator("answer")
+    @classmethod
+    def _answer_not_blank(cls, value: str) -> str:
+        if not isinstance(value, str) or not value.strip():
+            raise PydanticCustomError("blank", "answer must not be blank")
+        return value
+
+
+__all__ = [
+    "InterviewAnswerRequest",
+    "InterviewCreateRequest",
+    "JobRequest",
+    "RunRequest",
+]

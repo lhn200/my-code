@@ -51,6 +51,11 @@ class Settings(BaseSettings):
     interview_score_threshold: int = Field(default=70, ge=0, le=100)
     max_interview_rounds: int = Field(default=2, ge=1, le=5)
 
+    # --- practice interview (interactive drill) ---
+    interview_planned_count: int = Field(default=5, ge=1, le=10)
+    interview_followup_limit: int = Field(default=1, ge=0, le=3)
+    interview_answer_max_chars: int = Field(default=2000, ge=50)
+
     # --- resume ingestion ---
     upload_dir: Path = Path("data/uploads")
     resume_max_file_mb: float = Field(default=5, gt=0)

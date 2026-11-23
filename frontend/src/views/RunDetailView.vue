@@ -23,6 +23,7 @@ const {
   error,
   notFound,
   isResumable,
+  isRunning,
   isResuming,
   resumeError,
   load,
@@ -45,6 +46,9 @@ const {
 } = snapshots
 
 const pageTitle = computed(() => {
+  if (isRunning.value) {
+    return '分析进行中'
+  }
   if (!result.value) {
     return '分析结果'
   }
@@ -59,23 +63,69 @@ const pageTitle = computed(() => {
 
 const jobCount = computed(() => result.value?.jobs.length ?? 0)
 
-onMounted(async () => {
-  await load()
+const POLL_INTERVAL_MS = 4000
+let pollTimer: ReturnType<typeof setTimeout> | null = null
+let disposed = false
+
+function stopPolling(): void {
+  if (pollTimer) {
+    clearTimeout(pollTimer)
+    pollTimer = null
+  }
+}
+
+function schedulePoll(): void {
+  if (disposed) {
+    return
+  }
+  stopPolling()
+  pollTimer = setTimeout(() => {
+    void poll()
+  }, POLL_INTERVAL_MS)
+}
+
+async function poll(): Promise<void> {
+  pollTimer = null
+  await load({ silent: true })
+  if (disposed) {
+    return
+  }
+  if (isRunning.value) {
+    schedulePoll()
+    return
+  }
   if (!error.value) {
     void loadSnapshots()
   }
+}
+
+async function afterLoad(): Promise<void> {
+  if (error.value) {
+    return
+  }
+  if (isRunning.value) {
+    schedulePoll()
+    return
+  }
+  void loadSnapshots()
+}
+
+onMounted(async () => {
+  await load()
+  await afterLoad()
 })
 
 onUnmounted(() => {
+  disposed = true
+  stopPolling()
   cancel()
   cancelSnapshots()
 })
 
 async function reload(): Promise<void> {
+  stopPolling()
   await load()
-  if (!error.value) {
-    void loadSnapshots()
-  }
+  await afterLoad()
 }
 
 async function onResume(): Promise<void> {
@@ -123,9 +173,15 @@ function onSelectSnapshot(checkpointId: string): void {
     />
 
     <template v-else-if="result">
+      <div v-if="isRunning" class="notice notice-warning" role="status">
+        <p>
+          分析正在后台执行，通常需要数分钟。本页会自动刷新，也可以先去做别的事，稍后回到会话列表查看结果。
+        </p>
+      </div>
+
       <RunResults :result="result" :state="state" />
 
-      <section class="card session-ops" aria-labelledby="resume-heading">
+      <section v-if="!isRunning" class="card session-ops" aria-labelledby="resume-heading">
         <div>
           <p class="eyebrow">SESSION CONTROL</p>
           <h2 id="resume-heading">会话操作</h2>
@@ -155,6 +211,7 @@ function onSelectSnapshot(checkpointId: string): void {
       </section>
 
       <SnapshotPanel
+        v-if="!isRunning"
         :snapshots="snapshotItems"
         :is-loading="snapshotsLoading"
         :error="snapshotsError"

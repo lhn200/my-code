@@ -16,6 +16,8 @@ ROLES: tuple[str, ...] = (
     "resume_optimizer",
     "career_coach",
     "interviewer",
+    "interview_questioner",
+    "interview_evaluator",
     "summarizer",
     "memory_extractor",
 )

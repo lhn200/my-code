@@ -279,8 +279,13 @@ def test_upload_and_paste_are_equivalent(settings, monkeypatch) -> None:
                 "/api/runs",
                 json={"goal": "后端", "resume_text": literal, "jobs": [job]},
             ).json()
-            assert uploaded["jobs"][0]["review"] == pasted["jobs"][0]["review"]
-            assert uploaded["jobs"][0]["resume_text"] == pasted["jobs"][0]["resume_text"]
+            uploaded_result = client.get(f"/api/runs/{uploaded['thread_id']}").json()["result"]
+            pasted_result = client.get(f"/api/runs/{pasted['thread_id']}").json()["result"]
+            assert uploaded_result["jobs"][0]["review"] == pasted_result["jobs"][0]["review"]
+            assert (
+                uploaded_result["jobs"][0]["resume_text"]
+                == pasted_result["jobs"][0]["resume_text"]
+            )
 
 
 def test_deleted_upload_dir_does_not_block_startup_or_runs(settings) -> None:

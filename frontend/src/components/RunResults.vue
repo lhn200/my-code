@@ -1,6 +1,9 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
+import { useRouter } from 'vue-router'
 
+import { toApiError, type ApiError } from '@/api/client'
+import { createInterviewSession } from '@/api/interviews'
 import type { JobResult, OptimizationRound, RunResult, RunState } from '@/api/types'
 import EmptyState from './EmptyState.vue'
 import JobCard from './JobCard.vue'
@@ -11,8 +14,35 @@ const props = defineProps<{
   state?: RunState | null
 }>()
 
+const router = useRouter()
+const practicingJobId = ref('')
+const practiceError = ref<ApiError | null>(null)
+
+async function startPractice(job: JobResult): Promise<void> {
+  if (practicingJobId.value) {
+    return
+  }
+  practiceError.value = null
+  practicingJobId.value = job.job_id
+  try {
+    const payload = await createInterviewSession({
+      thread_id: props.result.thread_id,
+      job_id: job.job_id,
+    })
+    await router.push({ name: 'interview', params: { sessionId: payload.session.id } })
+  } catch (cause) {
+    practiceError.value = toApiError(cause)
+  } finally {
+    practicingJobId.value = ''
+  }
+}
+
+const isRunning = computed(() => props.result.run_status === 'running')
+
 const statusInfo = computed(() => {
   switch (props.result.run_status) {
+    case 'running':
+      return { label: '分析正在后台执行，页面会自动刷新…', tone: 'notice-warning', short: '分析中' }
     case 'succeeded':
       return { label: '全部岗位分析成功', tone: 'notice-success', short: '全部成功' }
     case 'partial':
@@ -114,9 +144,14 @@ function interviewFor(job: JobResult) {
       </div>
     </section>
 
-    <p v-if="!result.jobs.length" class="notice notice-error" role="alert">
+    <p v-if="!isRunning && !result.jobs.length" class="notice notice-error" role="alert">
       本次运行没有可展示的岗位结果，请保留 thread_id 以便排查。
     </p>
+
+    <div v-if="practiceError" class="notice notice-error practice-error" role="alert">
+      <p>{{ practiceError.message }}</p>
+      <button type="button" class="btn btn-sm" @click="practiceError = null">关闭</button>
+    </div>
 
     <section class="dossier-list" aria-label="岗位分析结果">
       <JobCard
@@ -126,10 +161,12 @@ function interviewFor(job: JobResult) {
         :interview="interviewFor(job)"
         :risky="riskyJobs.some((item) => item.job_id === job.job_id)"
         :threshold="threshold || 70"
+        :practicing="practicingJobId === job.job_id"
+        @practice="startPractice(job)"
       />
     </section>
 
-    <section class="card record-card" aria-labelledby="optimization-heading">
+    <section v-if="!isRunning" class="card record-card" aria-labelledby="optimization-heading">
       <div class="card-head">
         <div>
           <p class="eyebrow">OPTIMIZATION LOG</p>
@@ -158,7 +195,7 @@ function interviewFor(job: JobResult) {
       </p>
     </section>
 
-    <section class="card advice" aria-labelledby="advice-heading">
+    <section v-if="!isRunning" class="card advice" aria-labelledby="advice-heading">
       <p class="eyebrow">ADVISOR MEMO</p>
       <h2 id="advice-heading">求职建议</h2>
       <MarkdownView :source="result.advice" />
@@ -252,6 +289,18 @@ function interviewFor(job: JobResult) {
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
+}
+
+.practice-error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.practice-error p {
+  margin: 0;
 }
 
 .card {

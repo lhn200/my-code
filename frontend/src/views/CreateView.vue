@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 
 import { isApiError } from '@/api/client'
@@ -42,16 +42,16 @@ const {
 
 const mode = ref<ResumeMode>('paste')
 const submitting = ref(false)
-const longRunning = ref(false)
 const submitError = ref('')
 const submitThreadId = ref('')
 const pendingNotice = ref(false)
 
-let hintTimer: ReturnType<typeof setTimeout> | null = null
-
 const canAddJob = computed(() => jobs.value.length < MAX_JOBS)
 const submitDisabled = computed(() => submitting.value || isUploading.value)
 const remainingJobs = computed(() => MAX_JOBS - jobs.value.length)
+const errorMessages = computed(() =>
+  Array.from(new Set([...generalErrors.value, ...Object.values(fieldErrors)])),
+)
 
 onMounted(() => {
   pendingNotice.value = Boolean(readPendingRun())
@@ -93,18 +93,16 @@ async function onSubmit(): Promise<void> {
   submitError.value = ''
   submitThreadId.value = ''
   if (!validate(mode.value, hasParsedResult.value)) {
+    await nextTick()
+    document.querySelector('.field-error')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
     return
   }
 
   submitting.value = true
-  longRunning.value = false
   markPendingRun(goal.value)
-  hintTimer = setTimeout(() => {
-    longRunning.value = true
-  }, 10_000)
 
   try {
-    const result = await createRun(buildRequest(), { timeoutMs: 180_000 })
+    const result = await createRun(buildRequest(), { timeoutMs: 60_000 })
     clearPendingRun()
     await router.push({ name: 'run-detail', params: { threadId: result.thread_id } })
   } catch (caught) {
@@ -113,8 +111,7 @@ async function onSubmit(): Promise<void> {
       return
     }
     if (apiError?.kind === 'timeout') {
-      submitError.value =
-        '请求超时：后端可能仍在执行，暂时无法确认结果。表单内容已保留，请稍后到会话列表查看，或重新提交。'
+      submitError.value = '提交超时：请先到会话列表确认是否已创建，避免重复提交。'
       return
     }
     if (apiError) {
@@ -127,20 +124,12 @@ async function onSubmit(): Promise<void> {
     clearPendingRun()
   } finally {
     submitting.value = false
-    longRunning.value = false
-    if (hintTimer) {
-      clearTimeout(hintTimer)
-      hintTimer = null
-    }
   }
 }
 
 onUnmounted(() => {
   if (typeof window !== 'undefined') {
     window.removeEventListener('beforeunload', beforeUnload)
-  }
-  if (hintTimer) {
-    clearTimeout(hintTimer)
   }
   intake.cancel()
 })
@@ -306,8 +295,8 @@ onUnmounted(() => {
 
         <div v-if="errorCount" class="notice notice-error" role="alert" aria-live="polite">
           <p>有 {{ errorCount }} 处需要修正。</p>
-          <ul v-if="generalErrors.length" class="summary-list">
-            <li v-for="message in generalErrors" :key="message">{{ message }}</li>
+          <ul v-if="errorMessages.length" class="summary-list">
+            <li v-for="message in errorMessages" :key="message">{{ message }}</li>
           </ul>
         </div>
 
@@ -321,9 +310,8 @@ onUnmounted(() => {
             >
               {{ submitting ? '分析中…' : '开始分析 →' }}
             </button>
-            <p class="hint">预计 40–90 秒；关闭页面后可在会话列表查看结果。</p>
-            <p v-if="longRunning" class="notice" role="status">
-              分析仍在进行，请勿关闭页面。完成后会自动跳转到结果页。
+            <p class="hint">
+              提交后立即进入结果页，分析在后台执行；可随时关闭页面，稍后到会话列表查看结果。
             </p>
             <p v-if="submitError" class="field-error" role="alert">{{ submitError }}</p>
             <p v-if="submitThreadId" class="muted">thread_id：<code>{{ submitThreadId }}</code></p>

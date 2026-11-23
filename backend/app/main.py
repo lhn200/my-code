@@ -13,6 +13,7 @@ from fastapi.responses import JSONResponse
 
 from .api.auth import router as auth_router
 from .api.health import router as health_router
+from .api.interviews import router as interviews_router
 from .api.memories import router as memories_router
 from .api.resumes import router as resumes_router
 from .api.runs import router as runs_router
@@ -78,6 +79,7 @@ def create_app(settings: Settings | None = None, model_factory=None) -> FastAPI:
     app.include_router(health_router, prefix=settings.api_prefix)
     app.include_router(auth_router, prefix=settings.api_prefix)
     app.include_router(runs_router, prefix=settings.api_prefix)
+    app.include_router(interviews_router, prefix=settings.api_prefix)
     app.include_router(sessions_router, prefix=settings.api_prefix)
     app.include_router(session_summary_router, prefix=settings.api_prefix)
     app.include_router(memories_router, prefix=settings.api_prefix)

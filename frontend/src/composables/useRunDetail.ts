@@ -16,8 +16,10 @@ export function useRunDetail(getThreadId: () => string) {
   const isResumable = computed(() => Boolean(data.value && data.value.next.length > 0))
   const result = computed(() => data.value?.result ?? null)
   const state = computed(() => data.value?.state ?? null)
+  const isRunning = computed(() => result.value?.run_status === 'running')
 
-  async function load(): Promise<void> {
+  async function load(options: { silent?: boolean } = {}): Promise<void> {
+    const silent = options.silent === true
     const threadId = getThreadId().trim()
     if (!threadId) {
       error.value = null
@@ -26,18 +28,29 @@ export function useRunDetail(getThreadId: () => string) {
     }
     controller?.abort()
     controller = new AbortController()
-    isLoading.value = true
-    error.value = null
+    const active = controller
+    if (!silent) {
+      isLoading.value = true
+      error.value = null
+    }
     try {
-      data.value = await getRun(threadId, { signal: controller.signal })
+      data.value = await getRun(threadId, { signal: active.signal })
+      if (silent) {
+        error.value = null
+      }
     } catch (caught) {
       const apiError = toApiError(caught)
-      if (apiError.code !== 'request_canceled') {
+      // 轮询失败保持静默，避免打断正在展示的进度。
+      if (apiError.code !== 'request_canceled' && !silent) {
         error.value = apiError
       }
     } finally {
-      isLoading.value = false
-      controller = null
+      if (controller === active) {
+        controller = null
+      }
+      if (!silent) {
+        isLoading.value = false
+      }
     }
   }
 
@@ -76,6 +89,7 @@ export function useRunDetail(getThreadId: () => string) {
     error,
     notFound,
     isResumable,
+    isRunning,
     isResuming,
     resumeError,
     load,

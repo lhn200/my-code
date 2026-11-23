@@ -39,6 +39,11 @@ const rendered = computed(() => {
   font-size: var(--text-sm);
 }
 
+.markdown-body {
+  min-width: 0;
+  max-width: 100%;
+}
+
 .markdown-body :deep(h1),
 .markdown-body :deep(h2),
 .markdown-body :deep(h3) {
@@ -109,7 +114,10 @@ const rendered = computed(() => {
 }
 
 .markdown-body :deep(pre) {
+  max-width: 100%;
   overflow-x: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
   margin: 0 0 var(--space-3);
   padding: var(--space-3);
   background: var(--color-code-bg);

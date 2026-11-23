@@ -2,6 +2,9 @@ from __future__ import annotations
 
 from fastapi.testclient import TestClient
 
+from app.checkpoint.sqlite import new_thread_id
+from app.db import connect
+from app.db.runs import create_run as insert_run
 from app.main import create_app
 from tests.auth_utils import authenticate
 from tests.fakes import DEFAULT_HANDLERS, FakeModels
@@ -27,6 +30,36 @@ def _payload(jobs=None, **overrides):
 
 def _fields(response):
     return {(item["field"], item["type"]) for item in response.json()["error"]["fields"]}
+
+
+def _submit_and_fetch(client, payload):
+    """创建接口立即返回 thread_id，真正的结果通过 GET 查询。"""
+    response = client.post("/api/runs", json=payload)
+    assert response.status_code == 200, response.text
+    created = response.json()
+    assert created["run_status"] == "running"
+    assert created["jobs"] == []
+    thread_id = created["thread_id"]
+    assert thread_id
+    detail = client.get(f"/api/runs/{thread_id}")
+    assert detail.status_code == 200, detail.text
+    return detail.json()
+
+
+def test_running_run_without_checkpoint_returns_pending(settings) -> None:
+    models = FakeModels(DEFAULT_HANDLERS)
+    with TestClient(create_app(settings, model_factory=models.factory)) as client:
+        authenticate(client)
+        user_id = client.get("/api/auth/me").json()["id"]
+        thread_id = new_thread_id()
+        with connect(settings.checkpoint_db_path) as connection:
+            insert_run(connection, thread_id, user_id, "尚未开始的运行")
+
+        response = client.get(f"/api/runs/{thread_id}")
+        assert response.status_code == 200, response.text
+        body = response.json()
+        assert body["result"]["run_status"] == "running"
+        assert body["result"]["jobs"] == []
 
 
 def test_top_level_thread_id_is_rejected(client) -> None:
@@ -84,9 +117,8 @@ def test_job_id_is_generated(settings) -> None:
     job = {"title": "Backend Engineer", "original_position_text": "Python"}
     with TestClient(create_app(settings, model_factory=models.factory)) as client:
         authenticate(client)
-        response = client.post("/api/runs", json=_payload([job]))
-        assert response.status_code == 200
-        assert response.json()["jobs"][0]["job_id"] == "job-1"
+        body = _submit_and_fetch(client, _payload([job]))
+        assert body["result"]["jobs"][0]["job_id"] == "job-1"
 
 
 def test_five_jobs_accepted(settings) -> None:
@@ -100,18 +132,15 @@ def test_five_jobs_accepted(settings) -> None:
     ]
     with TestClient(create_app(settings, model_factory=models.factory)) as client:
         authenticate(client)
-        response = client.post("/api/runs", json=_payload(jobs))
-        assert response.status_code == 200
-        assert len(response.json()["jobs"]) == 5
+        body = _submit_and_fetch(client, _payload(jobs))
+        assert len(body["result"]["jobs"]) == 5
 
 
 def test_run_returns_structured_result(settings) -> None:
     models = FakeModels(DEFAULT_HANDLERS)
     with TestClient(create_app(settings, model_factory=models.factory)) as client:
         authenticate(client)
-        response = client.post("/api/runs", json=_payload())
-        assert response.status_code == 200
-        body = response.json()
+        body = _submit_and_fetch(client, _payload())["result"]
         assert body["run_status"] == "succeeded"
         assert body["thread_id"]
         assert body["advice"]

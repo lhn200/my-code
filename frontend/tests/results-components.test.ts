@@ -1,6 +1,11 @@
 // @vitest-environment jsdom
 import { mount } from '@vue/test-utils'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
+
+vi.mock('vue-router', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('vue-router')>()
+  return { ...actual, useRouter: () => ({ push: vi.fn() }) }
+})
 
 import type { JobResult, RunResult } from '@/api/types'
 import JobCard from '@/components/JobCard.vue'

@@ -1,6 +1,6 @@
 /** 与后端 AgentState / RunResult 契约对齐的手写类型。 */
 
-export type RunStatus = 'succeeded' | 'partial' | 'failed'
+export type RunStatus = 'running' | 'succeeded' | 'partial' | 'failed'
 export type JobStatus = 'ok' | 'failed'
 export type ResumeSource = 'baseline' | 'variant'
 
@@ -62,11 +62,19 @@ export interface OptimizationRound {
   summary: string
 }
 
+export type InterviewReportSource = 'offline' | 'practice'
+export type InterviewSessionStatus = 'active' | 'ready_to_finish' | 'completed'
+export type InterviewMessageRole = 'interviewer' | 'candidate'
+export type InterviewMessageKind = 'question' | 'followup' | 'feedback' | 'answer'
+
 export interface InterviewReportSummary {
   job_id: string
   interview_thread_id: string
   status: 'completed' | 'abandoned'
   generated_at: string
+  variant_version?: number
+  source?: InterviewReportSource
+  session_id?: string
   dimension_averages: Record<string, number>
   overall_score: number | null
   highlights: string[]
@@ -75,6 +83,45 @@ export interface InterviewReportSummary {
   requirement_gaps: string[]
   answered_count: number
   planned_count: number
+}
+
+export interface InterviewSession {
+  id: string
+  thread_id: string
+  job_id: string
+  job_title: string
+  status: InterviewSessionStatus
+  planned_count: number
+  asked_count: number
+  current_question_no: number
+  followups_used: number
+  max_followups: number
+  variant_version: number
+  created_at: string
+  updated_at: string
+  completed_at: string | null
+}
+
+export interface InterviewSessionMessage {
+  id: string
+  role: InterviewMessageRole
+  kind: InterviewMessageKind
+  question_no: number
+  content: string
+  score: number | null
+  strengths: string[]
+  improvements: string[]
+  created_at: string
+}
+
+export interface InterviewSessionPayload {
+  session: InterviewSession
+  messages: InterviewSessionMessage[]
+  report: InterviewReportSummary | null
+}
+
+export interface InterviewSessionListResponse {
+  items: InterviewSessionPayload[]
 }
 
 export interface JobResult {

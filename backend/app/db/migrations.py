@@ -8,7 +8,7 @@ from pathlib import Path
 
 from .connection import connect
 
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 
 _CORE_DDL = """
 CREATE TABLE IF NOT EXISTS user_memories (
@@ -81,6 +81,49 @@ CREATE TABLE IF NOT EXISTS runs (
     updated_at TEXT NOT NULL,
     deleted_at TEXT
 );
+
+CREATE TABLE IF NOT EXISTS interview_sessions (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL REFERENCES users (id),
+    thread_id TEXT NOT NULL,
+    job_id TEXT NOT NULL,
+    job_title TEXT NOT NULL DEFAULT '',
+    goal TEXT NOT NULL DEFAULT '',
+    job_profile_json TEXT NOT NULL DEFAULT '{}',
+    resume_text TEXT NOT NULL DEFAULT '',
+    variant_version INTEGER NOT NULL DEFAULT 0,
+    status TEXT NOT NULL DEFAULT 'active'
+        CHECK (status IN ('active', 'ready_to_finish', 'completed')),
+    planned_count INTEGER NOT NULL DEFAULT 5,
+    asked_count INTEGER NOT NULL DEFAULT 0,
+    current_question_no INTEGER NOT NULL DEFAULT 0,
+    followups_used INTEGER NOT NULL DEFAULT 0,
+    max_followups INTEGER NOT NULL DEFAULT 1,
+    report_json TEXT,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    completed_at TEXT
+);
+
+CREATE INDEX IF NOT EXISTS ix_interview_sessions_run
+    ON interview_sessions (user_id, thread_id, updated_at DESC);
+
+CREATE TABLE IF NOT EXISTS interview_messages (
+    id TEXT PRIMARY KEY,
+    session_id TEXT NOT NULL REFERENCES interview_sessions (id) ON DELETE CASCADE,
+    seq INTEGER NOT NULL,
+    role TEXT NOT NULL CHECK (role IN ('interviewer', 'candidate')),
+    kind TEXT NOT NULL CHECK (kind IN ('question', 'followup', 'feedback', 'answer')),
+    question_no INTEGER NOT NULL DEFAULT 0,
+    content TEXT NOT NULL,
+    score INTEGER,
+    strengths_json TEXT NOT NULL DEFAULT '[]',
+    improvements_json TEXT NOT NULL DEFAULT '[]',
+    created_at TEXT NOT NULL
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS ux_interview_messages_seq
+    ON interview_messages (session_id, seq);
 """
 
 _FTS_DDL = """

@@ -9,7 +9,10 @@ const props = defineProps<{
   interview?: InterviewReportSummary | null
   risky?: boolean
   threshold?: number
+  practicing?: boolean
 }>()
+
+defineEmits<{ practice: [] }>()
 
 const failed = computed(() => props.job.status !== 'ok' || !props.job.review)
 const company = computed(() => props.job.profile?.company?.trim() || '公司未标注')
@@ -74,6 +77,10 @@ const interviewLabel = computed(() => {
   }
   return props.interview.status === 'completed' ? '面试已完成' : '面试已中止'
 })
+
+const interviewSource = computed(() =>
+  props.interview?.source === 'practice' ? '真人演练' : '离线预评估',
+)
 </script>
 
 <template>
@@ -103,6 +110,15 @@ const interviewLabel = computed(() => {
           <span v-if="!failed" class="tag">{{ versionLabel }}</span>
           <span v-if="risky" class="tag tag--amber">风险</span>
           <span v-if="failed" class="tag">未完成</span>
+          <button
+            v-if="!failed"
+            type="button"
+            class="btn btn-ghost btn-sm"
+            :disabled="practicing"
+            @click="$emit('practice')"
+          >
+            {{ practicing ? '准备中…' : '开始演练' }}
+          </button>
         </div>
       </header>
 
@@ -171,7 +187,8 @@ const interviewLabel = computed(() => {
             <span class="stamp" :class="interviewTone">{{ interviewLabel }}</span>
           </div>
           <p class="interview-meta">
-            已回答 {{ interview.answered_count }} / {{ interview.planned_count }} 题
+            {{ interviewSource }} · 已回答 {{ interview.answered_count }} /
+            {{ interview.planned_count }} 题
           </p>
           <ul class="interview-list">
             <li v-for="item in interview.highlights" :key="`h-${item}`" class="good">

@@ -329,6 +329,7 @@ async def run_interview(payload: Mapping[str, Any], context: GraphContext) -> di
             status="completed",
             generated_at=datetime.now(timezone.utc).isoformat(timespec="seconds"),
             variant_version=variant_version,
+            source="offline",
             dimension_averages={
                 key: max(0.0, min(100.0, float(value)))
                 for key, value in output.dimension_averages.items()

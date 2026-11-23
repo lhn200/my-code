@@ -33,11 +33,13 @@ def test_load_all_roles_and_version(settings) -> None:
         "resume_optimizer",
         "career_coach",
         "interviewer",
+        "interview_questioner",
+        "interview_evaluator",
         "summarizer",
         "memory_extractor",
     }
     assert bundle.version
-    assert len(bundle.versions) == 8
+    assert len(bundle.versions) == 10
 
 
 def test_messages_keep_untrusted_data_out_of_system(settings) -> None:

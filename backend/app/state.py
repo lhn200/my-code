@@ -75,6 +75,8 @@ class InterviewReportSummary(_Model):
     status: Literal["completed", "abandoned"]
     generated_at: str
     variant_version: int = 0
+    source: Literal["offline", "practice"] = "offline"
+    session_id: str = ""
     dimension_averages: dict[str, float] = Field(default_factory=dict)
     overall_score: float | None = None
     highlights: list[str] = Field(default_factory=list)
@@ -100,7 +102,7 @@ class JobResult(_Model):
 
 
 class RunResult(_Model):
-    run_status: Literal["succeeded", "partial", "failed"]
+    run_status: Literal["running", "succeeded", "partial", "failed"]
     thread_id: str = ""
     advice: str = ""
     jobs: list[JobResult] = Field(default_factory=list)

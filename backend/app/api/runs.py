@@ -23,6 +23,7 @@ from ..memory.repository import is_enabled
 from ..memory.retrieval import retrieve_memories
 from ..memory.session_runtime import update_session_memory
 from ..services.results import build_run_result
+from ..state import RunResult
 from .ownership import get_owned_run
 from .schemas import RunRequest
 
@@ -134,6 +135,60 @@ def _schedule_session_memory(
     )
 
 
+def _pending_payload(thread_id: str, run_status: str) -> dict[str, Any]:
+    """占位 payload：尚无检查点时用于告知前端当前运行状态。"""
+    result = RunResult(run_status=run_status, thread_id=thread_id)  # type: ignore[arg-type]
+    return {
+        "thread_id": thread_id,
+        "next": [],
+        "state": {},
+        "result": result.model_dump(),
+    }
+
+
+async def _run_memory_jobs(
+    app: Any, *, user_id: str, thread_id: str, state: dict[str, Any]
+) -> None:
+    """后台任务内直接等待记忆写入，避免再嵌套 BackgroundTasks。"""
+    settings = app.state.settings
+    pipeline = getattr(app.state, "memory_pipeline", None)
+    if pipeline is not None:
+        try:
+            with connect(settings.checkpoint_db_path) as connection:
+                enabled = is_enabled(
+                    connection, user_id, default_enabled=settings.memory_enabled_default
+                )
+            if enabled:
+                await pipeline.run(user_id=user_id, thread_id=thread_id, state=dict(state))
+        except Exception:
+            logger.warning("memory pipeline failed thread_id=%s", thread_id)
+    try:
+        await update_session_memory(
+            app, user_id=user_id, thread_id=thread_id, state=dict(state)
+        )
+    except Exception:
+        logger.warning("session memory failed thread_id=%s", thread_id)
+
+
+async def _execute_run(
+    app: Any, *, user_id: str, thread_id: str, state: dict[str, Any]
+) -> None:
+    """在后台执行完整分析，并同步 runs 表状态。"""
+    settings = app.state.settings
+    graph = app.state.graph
+    try:
+        final = await graph.ainvoke(state, config=_run_config(thread_id))
+    except Exception:
+        _set_status(settings, thread_id, "failed")
+        logger.exception("run failed thread_id=%s", thread_id)
+        return
+
+    result = build_run_result(final, thread_id, settings)
+    _set_status(settings, thread_id, map_run_status(result.run_status))
+    if result.run_status in {"succeeded", "partial"}:
+        await _run_memory_jobs(app, user_id=user_id, thread_id=thread_id, state=final)
+
+
 @router.post("/runs")
 async def create_run(
     payload: RunRequest,
@@ -142,7 +197,6 @@ async def create_run(
     user: User = Depends(get_current_user),
 ) -> dict[str, Any]:
     settings = request.app.state.settings
-    graph = request.app.state.graph
     jobs = normalize_jobs([job.model_dump() for job in payload.jobs])
     state = build_initial_state(payload.goal, payload.resume_text, jobs)
     try:
@@ -159,35 +213,17 @@ async def create_run(
             default_title(payload.goal, settings.max_session_title_chars),
         )
         _attach_memories(connection, state, user_id=user.id, settings=settings)
-    try:
-        final = await graph.ainvoke(state, config=_run_config(thread_id))
-    except RunInputError as exc:
-        _set_status(settings, thread_id, "failed")
-        raise ApiError(422, exc.code, str(exc), exc.fields) from exc
-    except Exception:
-        _set_status(settings, thread_id, "failed")
-        logger.exception("run failed thread_id=%s", thread_id)
-        raise internal_error(thread_id) from None
 
-    result = build_run_result(final, thread_id, settings)
-    _set_status(settings, thread_id, map_run_status(result.run_status))
-    _schedule_memory(
-        request,
-        background,
+    # 分析耗时较长，立即返回 thread_id，由后台任务继续执行；
+    # 前端结果页轮询 GET /runs/{thread_id} 获取最新进度。
+    background.add_task(
+        _execute_run,
+        request.app,
         user_id=user.id,
         thread_id=thread_id,
-        state=final,
-        run_status=result.run_status,
+        state=state,
     )
-    _schedule_session_memory(
-        request,
-        background,
-        user_id=user.id,
-        thread_id=thread_id,
-        state=final,
-        run_status=result.run_status,
-    )
-    return result.model_dump()
+    return _pending_payload(thread_id, "running")["result"]
 
 
 @router.post("/runs/{thread_id}/resume")
@@ -238,11 +274,19 @@ async def get_run(
 ) -> dict[str, Any]:
     settings = request.app.state.settings
     graph = request.app.state.graph
-    _require_owned(settings, thread_id, user.id)
+    with connect(settings.checkpoint_db_path) as connection:
+        record = get_owned_run(connection, thread_id, user.id)
     snapshot = await graph.aget_state(_run_config(thread_id))
+    status = str(record["status"])
     if not snapshot.values:
-        raise thread_not_found(thread_id)
-    return _state_payload(snapshot, thread_id, settings)
+        # 运行刚开始（尚无检查点）或启动即失败时，用占位 payload 告知状态。
+        return _pending_payload(thread_id, "failed" if status == "failed" else "running")
+    payload = _state_payload(snapshot, thread_id, settings)
+    if status == "running":
+        # 后台仍在执行：中间检查点不代表最终结论，只暴露运行中状态。
+        payload["result"]["run_status"] = "running"
+        payload["result"]["jobs"] = []
+    return payload
 
 
 @router.get("/runs/{thread_id}/snapshots")

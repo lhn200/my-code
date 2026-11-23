@@ -7,6 +7,7 @@ import {
 
 import { authGuard } from '@/auth/guard'
 import CreateView from '@/views/CreateView.vue'
+import InterviewView from '@/views/InterviewView.vue'
 import LoginView from '@/views/LoginView.vue'
 import MemorySettingsView from '@/views/MemorySettingsView.vue'
 import RegisterView from '@/views/RegisterView.vue'
@@ -24,6 +25,12 @@ export const routes: RouteRecordRaw[] = [
     path: '/runs/:threadId',
     name: 'run-detail',
     component: RunDetailView,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/interviews/:sessionId',
+    name: 'interview',
+    component: InterviewView,
     meta: { requiresAuth: true },
   },
   {
