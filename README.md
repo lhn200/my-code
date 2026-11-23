@@ -1,6 +1,6 @@
 # Career Dossier · 大模型求职分析助手
 
-基于 **LangGraph 多智能体编排** 的求职分析应用。输入求职目标、简历与多个岗位 JD，系统会逐岗位解析要求、给出匹配评分、按缺口迭代优化简历、自动进行模拟面试，并汇总为一份可回访的「职业档案」。
+基于 **LangGraph 多智能体编排** 的求职分析应用。输入求职目标、简历与多个岗位 JD，系统会逐岗位解析要求、给出匹配评分、按缺口迭代优化简历、自动进行模拟面试，并汇总为一份可回访的「职业档案」。在此基础上还提供真实作答的模拟面试演练，以及围绕分析结果持续追问的 AI 教练。
 
 后端 FastAPI + SQLite（业务表与 checkpoint 同库），前端 Vue 3 + TypeScript，界面采用「档案室」视觉体系。
 
@@ -9,6 +9,8 @@
 - **多岗位并行分析**：`supervisor` 通过 `Send` 并行分发给岗位解析、简历评审、简历优化、模拟面试节点，再由 `Command(goto)` 汇聚到建议节点。
 - **评分与优化闭环**：按维度评分，未达阈值自动进入下一轮简历优化，轮次上限可配置，避免无限模型调用。
 - **自动模拟面试**：每个岗位生成多轮问答与评分，达到阈值或轮次上限后结束，输出亮点、风险、改进项与需求缺口。
+- **模拟面试演练**：在分析结果页按岗位发起真实作答，逐题获得反馈与追问，结束后生成评估报告并回填岗位卡，与离线预评估可区分。
+- **AI 模拟教练**：独立教练页，默认引用最近一次完成的分析，也可切换或解绑；支持多轮追问、历史会话、重命名与删除。
 - **简历摄入**：支持 PDF、DOCX 与图片（OCR），解析文本可编辑，低置信度会显式提示。
 - **账号与安全**：注册 / 登录、JWT、Argon2 密码哈希、登录限流、资源归属校验。
 - **会话管理**：目录搜索、分页、活跃 / 回收站切换、恢复与永久删除。
@@ -36,15 +38,15 @@
 career_assistant/
 ├─ backend/
 │  ├─ app/
-│  │  ├─ api/          # 认证、运行、会话、摘要、记忆、简历上传、健康检查
+│  │  ├─ api/          # 认证、运行、会话、摘要、记忆、简历上传、模拟面试、AI 教练、健康检查
 │  │  ├─ auth/         # JWT、密码哈希、登录限流、依赖注入
 │  │  ├─ checkpoint/   # LangGraph SQLite checkpointer
 │  │  ├─ config/       # Settings、models.yaml 模型路由
-│  │  ├─ db/           # 建表、迁移、用户 / 运行记录
+│  │  ├─ db/           # 建表、迁移、用户 / 运行记录、演练与教练会话
 │  │  ├─ graph/        # 主图、岗位子图、节点实现
 │  │  ├─ memory/       # 记忆写入、检索、摘要、上下文预算
 │  │  ├─ prompts/      # 各角色提示词（版本化）
-│  │  └─ services/     # 简历解析、OCR、结果构建、面试报告
+│  │  └─ services/     # 简历解析、OCR、结果构建、面试报告、面试演练、教练对话
 │  ├─ scripts/         # legacy checkpoint 清理等运维脚本
 │  └─ tests/           # 后端测试
 ├─ frontend/
@@ -52,10 +54,10 @@ career_assistant/
 │  │  ├─ api/          # 手写类型契约与请求封装
 │  │  ├─ auth/         # token 存储与路由守卫
 │  │  ├─ components/   # 岗位卡、结果区、快照、记忆、摘要等
-│  │  ├─ composables/  # 表单、运行详情、快照、会话、记忆等数据逻辑
+│  │  ├─ composables/  # 表单、运行详情、快照、会话、记忆、面试演练、教练对话等数据逻辑
 │  │  ├─ router/       # 路由表
 │  │  ├─ styles/       # 设计 token 与基础样式
-│  │  └─ views/        # 登录、注册、创建、结果、目录、查询、记忆设置
+│  │  └─ views/        # 登录、注册、创建、结果、目录、查询、记忆设置、面试演练、AI 教练
 │  └─ tests/           # Vitest 用例
 ├─ evals/              # 提示词离线评测（数据集、基线、运行器）
 ├─ design/             # UI 设计稿
@@ -140,6 +142,7 @@ START → intake → supervisor
 - 评分低于阈值且未达轮次上限时，`supervisor` 继续分发优化任务。
 - 每个节点的状态都写入 checkpoint，可按 `thread_id` + `checkpoint_id` 回放。
 - 运行结束后异步提取长期记忆并生成会话摘要，失败不会影响主流程结果。
+- 模拟面试演练与 AI 教练独立于主图：按各自的会话表读写，不改变上述工作流；教练绑定分析时只读取其状态作为上下文。
 
 ## API 概览
 
@@ -151,7 +154,7 @@ START → intake → supervisor
 | POST | `/auth/login` | 登录并获取 token |
 | POST | `/auth/logout` | 退出 |
 | GET | `/auth/me` | 当前用户 |
-| POST | `/runs` | 创建并同步执行一次完整分析 |
+| POST | `/runs` | 创建分析任务并在后台执行 |
 | POST | `/runs/{thread_id}/resume` | 恢复未完成的运行 |
 | GET | `/runs/{thread_id}` | 运行状态与结果 |
 | GET | `/runs/{thread_id}/snapshots` | 快照列表 |
@@ -163,6 +166,17 @@ START → intake → supervisor
 | DELETE | `/sessions/{thread_id}/purge` | 永久删除 |
 | GET | `/sessions/{thread_id}/summary` | 读取会话摘要 |
 | POST | `/sessions/{thread_id}/summary/regenerate` | 重新生成摘要 |
+| POST | `/interviews` | 创建或复用某个岗位的模拟面试演练 |
+| GET | `/interviews` | 列出某分析下的演练会话 |
+| GET | `/interviews/{session_id}` | 演练详情与消息 |
+| POST | `/interviews/{session_id}/answers` | 提交回答，返回反馈与下一题 |
+| POST | `/interviews/{session_id}/finish` | 生成演练评估报告并回填岗位卡 |
+| POST | `/coach/sessions` | 新建教练会话（可绑定分析） |
+| GET | `/coach/sessions` | 教练会话列表（可按分析过滤） |
+| GET | `/coach/sessions/{session_id}` | 教练会话与全部消息 |
+| PATCH | `/coach/sessions/{session_id}` | 重命名或改绑 / 解绑分析 |
+| DELETE | `/coach/sessions/{session_id}` | 删除教练会话 |
+| POST | `/coach/sessions/{session_id}/messages` | 发送消息并获取教练回复 |
 | GET / PUT | `/memories/settings` | 读取 / 更新记忆开关 |
 | GET / DELETE | `/memories` | 列出 / 清空记忆 |
 | PATCH / DELETE | `/memories/{memory_id}` | 编辑 / 删除单条记忆 |
@@ -172,14 +186,14 @@ START → intake → supervisor
 ## 测试与评测
 
 ```powershell
-# 后端（当前 297 项用例）
+# 后端（当前 312 项用例）
 cd backend
 python -m pytest
 
 # 前端
 cd frontend
 npm run typecheck
-npm run test        # 10 个文件、64 个用例
+npm run test        # 12 个文件、76 个用例
 npm run build
 
 # 提示词离线评测（需要可用模型配置）
@@ -190,7 +204,7 @@ python -m evals.run
 
 ## 数据与运维
 
-- 业务表（用户、运行记录、记忆、摘要元数据）与 LangGraph checkpoint 共用 `data/checkpoints.sqlite3`。
+- 业务表（用户、运行记录、记忆、摘要元数据、演练与教练会话）与 LangGraph checkpoint 共用 `data/checkpoints.sqlite3`。
 - 简历上传文件位于 `data/uploads/`。
 - `data/` 已被 `.gitignore` 忽略，请勿提交数据库与上传文件。
 - 清理无主 checkpoint：

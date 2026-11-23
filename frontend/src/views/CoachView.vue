@@ -78,8 +78,12 @@ async function bootstrap(): Promise<void> {
   try {
     const response = await listSessions({ page_size: 100 })
     analyses.value = response.items
-    if (response.items.length) {
-      selectedThread.value = response.items[0].thread_id
+    const finished =
+      response.items.find((item) => item.status === 'completed') ??
+      response.items.find((item) => item.status === 'partial') ??
+      response.items[0]
+    if (finished) {
+      selectedThread.value = finished.thread_id
     }
   } catch {
     analysisError.value = '分析列表载入失败，可先在不绑定分析的情况下与教练对话。'
