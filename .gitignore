@@ -31,5 +31,8 @@ dist/
 .DS_Store
 Thumbs.db
 
+# Trae HTML 分享缓存
+.trae-html-share-packages/
+
 # OpenSpec working docs
 openspec/
