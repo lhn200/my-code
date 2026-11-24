@@ -6,17 +6,17 @@
 # 其余角色使用 qwen 系列以控制延迟与成本。
 default:
   provider: openai
-  model: qwen-plus
+  model: qwen3.7-plus
   temperature: 0.2
 
 roles:
   supervisor:
     provider: openai
-    model: qwen-flash
+    model: qwen3.7-flash
     temperature: 0.0
   job_analyst:
     provider: openai
-    model: qwen-plus
+    model: qwen3.7-plus
     temperature: 0.1
   resume_reviewer:
     provider: openai
@@ -28,7 +28,7 @@ roles:
     temperature: 0.0
   career_coach:
     provider: openai
-    model: qwen-plus
+    model: qwen3.7-plus
     temperature: 0.4
   interviewer:
     provider: openai
@@ -36,13 +36,13 @@ roles:
     temperature: 0.0
   coach_chat:
     provider: openai
-    model: qwen-plus
+    model: qwen3.7-plus
     temperature: 0.5
   summarizer:
     provider: openai
-    model: qwen-flash
+    model: qwen3.7-flash
     temperature: 0.2
   memory_extractor:
     provider: openai
-    model: qwen-flash
+    model: qwen3.7-flash
     temperature: 0.2

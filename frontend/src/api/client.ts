@@ -110,6 +110,8 @@ const KNOWN_CODES: Record<string, string> = {
   rate_limited: '登录尝试过于频繁，请稍后再试',
   thread_not_found: '会话不存在或已失效',
   snapshot_not_found: '该快照不存在或已失效',
+  job_not_found: '该岗位不存在或已被移除',
+  resume_unavailable: '该岗位暂无可下载的简历',
   not_trashed: '该会话不在回收站中，请刷新后重试',
   too_many_jobs: '单次最多分析 5 个岗位',
   interview_not_found: '演练会话不存在或已失效',
@@ -280,6 +282,105 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
     }
 
     return parsed as T
+  } finally {
+    clearTimeout(timer)
+    external?.removeEventListener('abort', onExternalAbort)
+  }
+}
+
+export interface DownloadedFile {
+  blob: Blob
+  filename: string | null
+}
+
+export interface DownloadOptions {
+  signal?: AbortSignal
+  timeoutMs?: number
+}
+
+function filenameFromDisposition(disposition: string | null): string | null {
+  if (!disposition) {
+    return null
+  }
+  const encoded = /filename\*=UTF-8''([^;]+)/i.exec(disposition)
+  if (encoded) {
+    const value = encoded[1].trim().replace(/^"|"$/g, '')
+    try {
+      return decodeURIComponent(value)
+    } catch {
+      return value
+    }
+  }
+  const plain = /filename="?([^";]+)"?/i.exec(disposition)
+  return plain ? plain[1].trim() : null
+}
+
+/** 带鉴权下载二进制文件（如 PDF），失败时抛出与 request 一致的 ApiError。 */
+export async function requestBlob(
+  path: string,
+  options: DownloadOptions = {},
+): Promise<DownloadedFile> {
+  const controller = new AbortController()
+  const external = options.signal
+  let timedOut = false
+  const onExternalAbort = () => controller.abort()
+  external?.addEventListener('abort', onExternalAbort)
+
+  const timer = setTimeout(() => {
+    timedOut = true
+    controller.abort()
+  }, options.timeoutMs ?? 60_000)
+
+  try {
+    const headers: Record<string, string> = {}
+    const token = getToken()
+    if (token) {
+      headers.Authorization = `Bearer ${token}`
+    }
+
+    let response: Response
+    try {
+      response = await fetch(buildUrl(path), { headers, signal: controller.signal })
+    } catch (error) {
+      if (timedOut) {
+        throw new ApiError({
+          code: 'request_timeout',
+          message: '请求超时，请稍后重试',
+          kind: 'timeout',
+        })
+      }
+      if (isAbortError(error)) {
+        throw new ApiError({
+          code: 'request_canceled',
+          message: '请求已取消',
+          kind: 'canceled',
+        })
+      }
+      throw new ApiError({
+        code: 'network_error',
+        message: '网络连接失败，请检查网络后重试',
+        kind: 'network',
+      })
+    }
+
+    if (!response.ok) {
+      const text = await response.text()
+      let parsed: unknown
+      try {
+        parsed = text ? JSON.parse(text) : undefined
+      } catch {
+        parsed = undefined
+      }
+      if (response.status === 401) {
+        notifyUnauthorized()
+      }
+      throw normalizeHttpError(response.status, parsed)
+    }
+
+    return {
+      blob: await response.blob(),
+      filename: filenameFromDisposition(response.headers.get('Content-Disposition')),
+    }
   } finally {
     clearTimeout(timer)
     external?.removeEventListener('abort', onExternalAbort)

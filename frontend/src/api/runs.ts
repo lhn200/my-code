@@ -1,4 +1,4 @@
-import { request } from './client'
+import { request, requestBlob, type DownloadedFile } from './client'
 import type {
   RunStatePayload,
   RunRequest,
@@ -32,6 +32,18 @@ export function getRun(threadId: string, options: RunOptions = {}): Promise<RunS
   return request<RunStatePayload>(`/runs/${encodeURIComponent(threadId)}`, {
     signal: options.signal,
     timeoutMs: options.timeoutMs,
+  })
+}
+
+export function downloadResumePdf(
+  threadId: string,
+  jobId: string,
+  options: RunOptions = {},
+): Promise<DownloadedFile> {
+  const base = `/runs/${encodeURIComponent(threadId)}/jobs/${encodeURIComponent(jobId)}/resume.pdf`
+  return requestBlob(base, {
+    signal: options.signal,
+    timeoutMs: options.timeoutMs ?? 60_000,
   })
 }
 

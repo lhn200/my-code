@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 
 import { toApiError, type ApiError } from '@/api/client'
 import { createInterviewSession } from '@/api/interviews'
+import { downloadResumePdf } from '@/api/runs'
 import type { JobResult, OptimizationRound, RunResult, RunState } from '@/api/types'
 import EmptyState from './EmptyState.vue'
 import JobCard from './JobCard.vue'
@@ -16,13 +17,14 @@ const props = defineProps<{
 
 const router = useRouter()
 const practicingJobId = ref('')
-const practiceError = ref<ApiError | null>(null)
+const downloadingJobId = ref('')
+const actionError = ref<ApiError | null>(null)
 
 async function startPractice(job: JobResult): Promise<void> {
   if (practicingJobId.value) {
     return
   }
-  practiceError.value = null
+  actionError.value = null
   practicingJobId.value = job.job_id
   try {
     const payload = await createInterviewSession({
@@ -31,9 +33,32 @@ async function startPractice(job: JobResult): Promise<void> {
     })
     await router.push({ name: 'interview', params: { sessionId: payload.session.id } })
   } catch (cause) {
-    practiceError.value = toApiError(cause)
+    actionError.value = toApiError(cause)
   } finally {
     practicingJobId.value = ''
+  }
+}
+
+async function downloadResume(job: JobResult): Promise<void> {
+  if (downloadingJobId.value) {
+    return
+  }
+  actionError.value = null
+  downloadingJobId.value = job.job_id
+  try {
+    const { blob, filename } = await downloadResumePdf(props.result.thread_id, job.job_id)
+    const url = URL.createObjectURL(blob)
+    const anchor = document.createElement('a')
+    anchor.href = url
+    anchor.download = filename || `${job.title || job.job_id}-简历.pdf`
+    document.body.appendChild(anchor)
+    anchor.click()
+    anchor.remove()
+    URL.revokeObjectURL(url)
+  } catch (cause) {
+    actionError.value = toApiError(cause)
+  } finally {
+    downloadingJobId.value = ''
   }
 }
 
@@ -148,9 +173,9 @@ function interviewFor(job: JobResult) {
       本次运行没有可展示的岗位结果，请保留 thread_id 以便排查。
     </p>
 
-    <div v-if="practiceError" class="notice notice-error practice-error" role="alert">
-      <p>{{ practiceError.message }}</p>
-      <button type="button" class="btn btn-sm" @click="practiceError = null">关闭</button>
+    <div v-if="actionError" class="notice notice-error practice-error" role="alert">
+      <p>{{ actionError.message }}</p>
+      <button type="button" class="btn btn-sm" @click="actionError = null">关闭</button>
     </div>
 
     <section class="dossier-list" aria-label="岗位分析结果">
@@ -162,7 +187,9 @@ function interviewFor(job: JobResult) {
         :risky="riskyJobs.some((item) => item.job_id === job.job_id)"
         :threshold="threshold || 70"
         :practicing="practicingJobId === job.job_id"
+        :downloading="downloadingJobId === job.job_id"
         @practice="startPractice(job)"
+        @download="downloadResume(job)"
       />
     </section>
 

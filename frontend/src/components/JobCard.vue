@@ -10,9 +10,10 @@ const props = defineProps<{
   risky?: boolean
   threshold?: number
   practicing?: boolean
+  downloading?: boolean
 }>()
 
-defineEmits<{ practice: [] }>()
+defineEmits<{ practice: []; download: [] }>()
 
 const failed = computed(() => props.job.status !== 'ok' || !props.job.review)
 const company = computed(() => props.job.profile?.company?.trim() || '公司未标注')
@@ -110,6 +111,15 @@ const interviewSource = computed(() =>
           <span v-if="!failed" class="tag">{{ versionLabel }}</span>
           <span v-if="risky" class="tag tag--amber">风险</span>
           <span v-if="failed" class="tag">未完成</span>
+          <button
+            v-if="!failed && job.resume_text"
+            type="button"
+            class="btn btn-ghost btn-sm"
+            :disabled="downloading"
+            @click="$emit('download')"
+          >
+            {{ downloading ? '生成中…' : '下载 PDF' }}
+          </button>
           <button
             v-if="!failed"
             type="button"

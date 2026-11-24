@@ -4,8 +4,10 @@ from __future__ import annotations
 
 import logging
 from typing import Any
+from urllib.parse import quote
 
 from fastapi import APIRouter, BackgroundTasks, Depends, Request
+from fastapi.responses import Response
 
 from ..auth.dependencies import get_current_user
 from ..checkpoint.sqlite import new_thread_id, thread_config
@@ -23,6 +25,7 @@ from ..memory.repository import is_enabled
 from ..memory.retrieval import retrieve_memories
 from ..memory.session_runtime import update_session_memory
 from ..services.results import build_run_result
+from ..services.resume_pdf import render_resume_pdf, resume_pdf_filename
 from ..state import RunResult
 from .ownership import get_owned_run
 from .schemas import RunRequest
@@ -287,6 +290,50 @@ async def get_run(
         payload["result"]["run_status"] = "running"
         payload["result"]["jobs"] = []
     return payload
+
+
+@router.get("/runs/{thread_id}/jobs/{job_id}/resume.pdf")
+async def download_job_resume(
+    thread_id: str,
+    job_id: str,
+    request: Request,
+    user: User = Depends(get_current_user),
+) -> Response:
+    """Render the job's current resume variant (or baseline) as a PDF."""
+    settings = request.app.state.settings
+    graph = request.app.state.graph
+    _require_owned(settings, thread_id, user.id)
+    snapshot = await graph.aget_state(_run_config(thread_id))
+    state = snapshot.values or {}
+    if not state:
+        raise thread_not_found(thread_id)
+
+    result = build_run_result(state, thread_id, settings)
+    job = next((item for item in result.jobs if item.job_id == job_id), None)
+    if job is None:
+        raise ApiError(404, "job_not_found", f"job {job_id} was not found in this run")
+    if job.status != "ok" or not job.resume_text.strip():
+        raise ApiError(409, "resume_unavailable", "resume is not ready for this job")
+
+    pdf = render_resume_pdf(
+        title=job.title,
+        company=job.profile.company if job.profile else "",
+        text=job.resume_text,
+        version=job.current_variant_version,
+        score=job.review.score if job.review else None,
+        source=job.resume_source,
+    )
+    filename = resume_pdf_filename(job.title, job.current_variant_version)
+    return Response(
+        content=pdf,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": (
+                f"attachment; filename=\"resume.pdf\"; filename*=UTF-8''{quote(filename)}"
+            ),
+            "Cache-Control": "private, max-age=0, must-revalidate",
+        },
+    )
 
 
 @router.get("/runs/{thread_id}/snapshots")

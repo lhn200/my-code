@@ -90,6 +90,21 @@ describe('JobCard', () => {
     expect(wrapper.text()).toContain('模型调用失败')
     expect(wrapper.find('.score-badge').exists()).toBe(false)
   })
+
+  it('有简历文本时展示下载按钮并派发事件', async () => {
+    const wrapper = mount(JobCard, { props: { job: makeJob() } })
+    const button = wrapper.findAll('button').find((item) => item.text().includes('下载 PDF'))
+
+    expect(button).toBeTruthy()
+    await button!.trigger('click')
+    expect(wrapper.emitted('download')).toHaveLength(1)
+  })
+
+  it('没有简历文本时不展示下载按钮', () => {
+    const wrapper = mount(JobCard, { props: { job: makeJob({ resume_text: '' }) } })
+
+    expect(wrapper.findAll('button').some((item) => item.text().includes('下载 PDF'))).toBe(false)
+  })
 })
 
 describe('RunResults', () => {
