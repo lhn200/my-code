@@ -1,0 +1,48 @@
+# Role-based model routing. Environment overrides:
+#   DEFAULT_MODEL=<model>        MODEL_<ROLE>=<model>
+# Providers are OpenAI-compatible; credentials come from LLM_API_KEY / LLM_BASE_URL.
+# 默认对接阿里云百炼 DashScope 兼容模式（OpenAI 协议）。
+# 混合路由：评审/优化/面试使用 kimi-k3（该模型仅支持 temperature=0.0 或 1.0），
+# 其余角色使用 qwen 系列以控制延迟与成本。
+default:
+  provider: openai
+  model: qwen3.7-plus
+  temperature: 0.2
+
+roles:
+  supervisor:
+    provider: openai
+    model: qwen3.7-flash
+    temperature: 0.0
+  job_analyst:
+    provider: openai
+    model: qwen3.7-plus
+    temperature: 0.1
+  resume_reviewer:
+    provider: openai
+    model: kimi-k3
+    temperature: 0.0
+  resume_optimizer:
+    provider: openai
+    model: kimi-k3
+    temperature: 0.0
+  career_coach:
+    provider: openai
+    model: qwen3.7-plus
+    temperature: 0.4
+  interviewer:
+    provider: openai
+    model: kimi-k3
+    temperature: 0.0
+  coach_chat:
+    provider: openai
+    model: qwen3.7-plus
+    temperature: 0.5
+  summarizer:
+    provider: openai
+    model: qwen3.7-flash
+    temperature: 0.2
+  memory_extractor:
+    provider: openai
+    model: qwen3.7-flash
+    temperature: 0.2

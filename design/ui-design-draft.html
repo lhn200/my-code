@@ -1,0 +1,1517 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>求职助手 · UI 设计稿 v1.0</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700;900&family=Noto+Sans+SC:wght@300;400;500;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+/* ============================================================
+   求职助手 · UI 设计稿
+   概念：档案室 DOSSIER —— 编辑排版 × 档案卡 × 朱砂印记
+   ============================================================ */
+
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth}
+:root{
+  --paper:#f2eee4;
+  --paper-2:#faf7ef;
+  --paper-3:#e9e2d3;
+  --ink:#191712;
+  --ink-2:#4d463a;
+  --ink-3:#8a7f6b;
+  --line:#d8cfbc;
+  --line-2:#b3a68d;
+  --red:#b9402a;
+  --red-deep:#8f2c1a;
+  --red-wash:#f2dcd3;
+  --moss:#3d5a45;
+  --moss-wash:#e2e9df;
+  --amber:#94640f;
+  --amber-wash:#f4e6c9;
+  --blue:#39566f;
+  --blue-wash:#e0e7ec;
+  --serif:"Noto Serif SC","Songti SC","STSong","SimSun",serif;
+  --sans:"Noto Sans SC","PingFang SC","HarmonyOS Sans SC","Microsoft YaHei",sans-serif;
+  --mono:"IBM Plex Mono","JetBrains Mono","Cascadia Code",Consolas,monospace;
+  --shadow-print:0 1px 0 rgba(25,23,18,.04),0 18px 44px -24px rgba(45,38,24,.5);
+  --ease:cubic-bezier(.2,.7,.2,1);
+}
+
+body{
+  margin:0;
+  background:var(--paper);
+  color:var(--ink);
+  font-family:var(--sans);
+  font-size:15px;
+  line-height:1.7;
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+::selection{background:var(--red);color:#fff}
+h1,h2,h3,h4,p{margin:0}
+ul,ol{margin:0;padding:0;list-style:none}
+a{color:inherit;text-decoration:none}
+button{font:inherit;color:inherit;cursor:pointer;background:none;border:none;padding:0}
+.mono{font-family:var(--mono)}
+.muted{color:var(--ink-3)}
+.eyebrow{font-family:var(--mono);font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--ink-3)}
+
+/* 纸张纹理 */
+.grain{
+  position:fixed;inset:0;z-index:80;pointer-events:none;opacity:.22;mix-blend-mode:multiply;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.32'/%3E%3C/svg%3E");
+}
+.shell{max-width:1240px;margin:0 auto;padding:0 36px 140px}
+
+/* ---------- 顶栏 ---------- */
+.topbar{
+  position:sticky;top:0;z-index:60;
+  display:flex;align-items:center;gap:34px;
+  padding:14px 0;
+  border-bottom:1px solid var(--line);
+  background:rgba(242,238,228,.9);
+  backdrop-filter:blur(12px);
+}
+.wordmark{display:flex;align-items:center;gap:12px;font-family:var(--serif);font-weight:700;font-size:16px;letter-spacing:.04em}
+.seal{
+  width:34px;height:34px;display:grid;place-items:center;
+  border:1.5px solid var(--red);color:var(--red);
+  font-family:var(--serif);font-weight:900;font-size:17px;line-height:1;
+  box-shadow:2px 2px 0 var(--red-wash);
+}
+.wordmark small{display:block;font-family:var(--mono);font-size:9px;font-weight:400;letter-spacing:.16em;color:var(--ink-3)}
+.topnav{display:flex;gap:26px;margin-left:auto;font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--ink-3)}
+.topnav a{position:relative;padding:4px 0;transition:color .2s}
+.topnav a:hover{color:var(--red)}
+.topnav a span{color:var(--line-2);margin-right:6px}
+.topnav .ver{border:1px solid var(--line-2);padding:2px 8px;color:var(--ink-2)}
+
+/* ---------- 封面 ---------- */
+.cover{display:grid;grid-template-columns:1.15fr .85fr;gap:64px;align-items:center;padding:92px 0 76px}
+.cover-kicker{display:flex;align-items:center;gap:14px;font-family:var(--mono);font-size:10px;letter-spacing:.24em;color:var(--red);margin-bottom:30px}
+.cover-kicker::before{content:"";width:44px;height:1px;background:var(--red)}
+.cover h1{
+  font-family:var(--serif);font-weight:900;
+  font-size:clamp(40px,4.8vw,66px);
+  line-height:1.24;letter-spacing:-.02em;
+}
+.cover h1 em{font-style:normal;color:var(--red);position:relative;white-space:nowrap}
+.cover h1 em::after{content:"";position:absolute;left:0;right:0;bottom:.06em;height:.14em;background:var(--red-wash);z-index:-1}
+.lede{max-width:38em;margin-top:26px;font-size:15px;line-height:1.9;color:var(--ink-2)}
+.cover-meta{display:flex;flex-wrap:wrap;gap:0;margin-top:44px;border-top:1px solid var(--ink)}
+.meta-item{padding:16px 30px 0 0;margin-right:30px;border-right:1px solid var(--line)}
+.meta-item:last-child{border-right:0;margin-right:0}
+.meta-item b{display:block;font-family:var(--serif);font-size:26px;font-weight:700;line-height:1.2}
+.meta-item span{font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3)}
+
+.artifact{position:relative;height:470px}
+.art-card{position:absolute;inset:0;background:var(--paper-2);border:1px solid var(--line-2);box-shadow:var(--shadow-print)}
+.art-back{transform:rotate(4deg) translate(14px,10px);background:var(--paper-3)}
+.art-front{transform:rotate(-2.5deg);padding:26px 28px;display:flex;flex-direction:column;gap:18px}
+.art-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;padding-bottom:16px;border-bottom:1px solid var(--line)}
+.art-head h3{font-family:var(--serif);font-size:21px;line-height:1.35}
+.art-head p{font-family:var(--mono);font-size:10px;letter-spacing:.08em;color:var(--ink-3);margin-top:4px}
+.art-no{font-family:var(--mono);font-size:10px;letter-spacing:.14em;color:var(--ink-3);text-align:right}
+.art-score{display:flex;align-items:flex-end;gap:14px}
+.art-score b{font-family:var(--serif);font-size:86px;font-weight:900;line-height:.82;letter-spacing:-.04em}
+.art-score span{font-family:var(--mono);font-size:9px;letter-spacing:.16em;color:var(--ink-3);padding-bottom:10px}
+.art-row{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px dotted var(--line-2);font-size:12px}
+.art-row span{color:var(--ink-3)}
+.art-row b{font-family:var(--mono);font-weight:500}
+.stamp{
+  display:inline-block;font-family:var(--mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;
+  border:1.5px solid currentColor;padding:4px 10px;color:var(--red);transform:rotate(-2deg);
+}
+.stamp--moss{color:var(--moss)}
+.stamp--amber{color:var(--amber)}
+.stamp--gray{color:var(--ink-3)}
+.art-stamp{align-self:flex-end;margin-top:auto}
+
+/* ---------- 章节 ---------- */
+.sec{margin-top:110px}
+.sec-head{display:flex;align-items:flex-end;justify-content:space-between;gap:32px;border-top:1px solid var(--ink);padding-top:18px}
+.sec-no{font-family:var(--mono);font-size:11px;letter-spacing:.18em;color:var(--red);margin-bottom:8px}
+.sec-title{font-family:var(--serif);font-size:clamp(24px,2.6vw,34px);font-weight:700;line-height:1.3}
+.sec-desc{max-width:340px;font-size:12px;line-height:1.8;color:var(--ink-3);text-align:right}
+
+/* ---------- 设计系统 ---------- */
+.swatches{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:32px}
+.swatch{border:1px solid var(--line-2);background:var(--paper-2)}
+.swatch-chip{height:82px;border-bottom:1px solid var(--line-2)}
+.swatch-body{padding:12px 14px}
+.swatch-body b{display:block;font-size:12px;font-weight:600}
+.swatch-body code{display:block;font-size:10px;color:var(--ink-3);margin-top:2px}
+.swatch-body span{display:block;font-size:10px;color:var(--ink-3);margin-top:6px;line-height:1.5}
+
+.type-spec{margin-top:26px;border-top:1px solid var(--line)}
+.type-row{display:grid;grid-template-columns:170px 1fr;gap:26px;align-items:baseline;padding:20px 0;border-bottom:1px solid var(--line)}
+.type-row .label{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3)}
+.spec-table{width:100%;border-collapse:collapse;margin-top:26px;font-size:12px}
+.spec-table th{font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);text-align:left;font-weight:400;padding:0 12px 10px 0;border-bottom:1px solid var(--ink)}
+.spec-table td{padding:11px 12px 11px 0;border-bottom:1px solid var(--line);vertical-align:top}
+.spec-table td:first-child{font-family:var(--mono);font-size:11px;color:var(--red-deep);white-space:nowrap}
+.spec-table code{font-size:11px}
+
+/* ---------- 屏幕画板 ---------- */
+.screen-head{display:flex;align-items:flex-end;justify-content:space-between;gap:32px;margin:76px 0 16px}
+.screen-title{display:flex;align-items:baseline;gap:16px}
+.screen-title .no{font-family:var(--mono);font-size:12px;letter-spacing:.1em;color:var(--red)}
+.screen-title h3{font-family:var(--serif);font-size:25px;font-weight:700}
+.screen-title span{font-family:var(--mono);font-size:10px;letter-spacing:.12em;color:var(--ink-3)}
+.screen-note{max-width:360px;font-size:11.5px;line-height:1.75;color:var(--ink-3);text-align:right}
+.screen{border:1px solid var(--line-2);background:var(--paper-2);box-shadow:var(--shadow-print);border-radius:2px;overflow:hidden}
+.browserbar{display:flex;align-items:center;gap:12px;padding:9px 14px;border-bottom:1px solid var(--line);background:var(--paper-3)}
+.dots{display:flex;gap:5px}
+.dots i{width:7px;height:7px;border-radius:50%;background:var(--line-2);display:block}
+.browserbar .url{font-family:var(--mono);font-size:9.5px;letter-spacing:.06em;color:var(--ink-3)}
+.browserbar .cap{margin-left:auto;font-family:var(--mono);font-size:9px;letter-spacing:.14em;color:var(--ink-3)}
+.canvas{padding:clamp(20px,3.4vw,44px)}
+.canvas--flush{padding:0}
+
+/* 应用内框架 */
+.appbar{display:flex;align-items:center;justify-content:space-between;gap:24px;padding-bottom:18px;border-bottom:1px solid var(--line);margin-bottom:30px;flex-wrap:wrap}
+.appbar .brand{display:flex;align-items:center;gap:9px;font-family:var(--serif);font-weight:700;font-size:14px}
+.appbar .brand i{width:22px;height:22px;border:1px solid var(--red);color:var(--red);display:grid;place-items:center;font-style:normal;font-size:11px;font-weight:900}
+.appbar nav{display:flex;gap:24px;font-family:var(--mono);font-size:10px;letter-spacing:.06em;color:var(--ink-3);flex-wrap:wrap}
+.appbar nav .on{color:var(--red);border-bottom:1.5px solid var(--red);padding-bottom:2px}
+.appbar .user{display:flex;align-items:center;gap:12px;font-size:11px;color:var(--ink-3)}
+.appbar .avatar{width:24px;height:24px;border-radius:50%;background:var(--ink);color:var(--paper);display:grid;place-items:center;font-family:var(--serif);font-size:11px}
+
+.ptitle{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin-bottom:28px;flex-wrap:wrap}
+.ptitle h1{font-family:var(--serif);font-size:clamp(26px,3vw,34px);font-weight:700;line-height:1.25;letter-spacing:-.01em}
+.ptitle p{margin-top:8px;font-size:12.5px;color:var(--ink-3);max-width:34em}
+.ptitle .crumb{font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;color:var(--ink-3);margin-bottom:10px}
+.ptitle .crumb b{color:var(--red);font-weight:500}
+
+/* 栅格 */
+.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:28px}
+.col-4{grid-column:span 4}
+.col-5{grid-column:span 5}
+.col-6{grid-column:span 6}
+.col-7{grid-column:span 7}
+.col-8{grid-column:span 8}
+.col-9{grid-column:span 9}
+.col-12{grid-column:span 12}
+.stack{display:flex;flex-direction:column;gap:18px}
+.row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+
+/* 表单 */
+.field{display:flex;flex-direction:column;gap:7px}
+.field > label{font-family:var(--mono);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3)}
+.field > label b{color:var(--red);font-weight:500}
+.input,.textarea,.select{
+  width:100%;padding:11px 13px;background:var(--paper);color:var(--ink);
+  border:1px solid var(--line-2);border-radius:2px;font-family:var(--sans);font-size:13px;line-height:1.65;
+  transition:border-color .18s,box-shadow .18s;
+}
+.textarea{resize:vertical;min-height:84px}
+.input:focus,.textarea:focus,.select:focus{outline:none;border-color:var(--red);box-shadow:0 0 0 3px var(--red-wash)}
+.input::placeholder,.textarea::placeholder{color:#b0a58e}
+.hint{font-size:10.5px;color:var(--ink-3)}
+.counter{font-family:var(--mono);font-size:9.5px;color:var(--ink-3);letter-spacing:.06em}
+
+.seg{display:inline-flex;gap:3px;padding:3px;border:1px solid var(--line-2);background:var(--paper);border-radius:2px}
+.seg button{padding:6px 14px;font-size:11.5px;color:var(--ink-3);border-radius:1px;transition:.18s}
+.seg button.on{background:var(--ink);color:var(--paper)}
+
+/* 按钮 */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  padding:11px 20px;border:1px solid var(--ink);background:transparent;color:var(--ink);
+  border-radius:2px;font-size:13px;font-weight:500;line-height:1.2;
+  transition:transform .18s var(--ease),box-shadow .18s var(--ease),background .18s;
+}
+.btn:hover{transform:translate(-1px,-1px);box-shadow:3px 3px 0 var(--ink)}
+.btn--primary{background:var(--red);border-color:var(--red);color:#fff}
+.btn--primary:hover{box-shadow:3px 3px 0 var(--red-deep)}
+.btn--ghost{border-color:var(--line-2);color:var(--ink-2)}
+.btn--ghost:hover{box-shadow:3px 3px 0 var(--line-2)}
+.btn--sm{padding:6px 12px;font-size:11px}
+.btn .arrow{font-family:var(--mono);font-size:12px;transform:translateY(-1px)}
+.link{color:var(--red);border-bottom:1px solid var(--red-wash);transition:border-color .2s}
+.link:hover{border-color:var(--red)}
+
+/* 标签 / 印记 */
+.tag{display:inline-flex;align-items:center;padding:2px 9px;border:1px solid var(--line-2);border-radius:999px;font-family:var(--mono);font-size:9.5px;letter-spacing:.04em;color:var(--ink-2);background:var(--paper-2);white-space:nowrap}
+.tag--moss{border-color:var(--moss);color:var(--moss);background:var(--moss-wash)}
+.tag--red{border-color:var(--red);color:var(--red);background:var(--red-wash)}
+.tag--amber{border-color:var(--amber);color:var(--amber);background:var(--amber-wash)}
+.tag--blue{border-color:var(--blue);color:var(--blue);background:var(--blue-wash)}
+.tag-list{display:flex;flex-wrap:wrap;gap:6px}
+
+/* 岗位编辑 */
+.job-edit{border:1px solid var(--line);background:var(--paper-2);padding:20px;display:flex;flex-direction:column;gap:14px}
+.job-edit + .job-edit{margin-top:-1px}
+.job-edit--focus{border-color:var(--ink);box-shadow:3px 3px 0 var(--paper-3)}
+.job-edit-head{display:flex;align-items:center;justify-content:space-between;gap:16px}
+.job-no{display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:10px;letter-spacing:.14em;color:var(--ink-3)}
+.job-no b{font-family:var(--serif);font-size:22px;font-weight:700;color:var(--ink);letter-spacing:0}
+.job-edit .del{font-size:10.5px;color:var(--ink-3);border-bottom:1px solid var(--line-2)}
+.job-edit .del:hover{color:var(--red);border-color:var(--red)}
+
+/* 侧栏说明 */
+.aside{border:1px solid var(--ink);background:var(--paper);padding:22px;position:sticky;top:88px}
+.aside h3{font-family:var(--serif);font-size:17px;font-weight:700;padding-bottom:12px;border-bottom:1px solid var(--line)}
+.aside .sub{font-size:10.5px;color:var(--ink-3);line-height:1.7;margin-top:10px}
+.agent{padding:12px 0;border-bottom:1px dotted var(--line-2)}
+.agent:last-child{border-bottom:0;padding-bottom:0}
+.agent-top{display:flex;align-items:baseline;gap:10px}
+.agent-top i{font-family:var(--mono);font-style:normal;font-size:9px;color:var(--red)}
+.agent-top b{font-size:12.5px;font-weight:600}
+.agent p{font-size:10.5px;color:var(--ink-3);margin-top:3px;line-height:1.6}
+.rule-list{display:flex;flex-direction:column;gap:7px;margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}
+.rule-list li{display:flex;gap:8px;font-size:10.5px;color:var(--ink-2)}
+.rule-list li::before{content:"—";color:var(--red)}
+.privacy{margin-top:14px;padding:10px 12px;border:1px dashed var(--line-2);font-size:10px;color:var(--ink-3);line-height:1.65}
+
+/* ---------- 登录 ---------- */
+.login{display:grid;grid-template-columns:1.08fr .92fr;min-height:540px}
+.login-left{
+  background:var(--ink);color:var(--paper);padding:48px 46px;
+  display:flex;flex-direction:column;justify-content:space-between;gap:52px;
+  position:relative;overflow:hidden;
+}
+.login-left::after{
+  content:"职";position:absolute;right:-26px;bottom:-72px;
+  font-family:var(--serif);font-size:272px;line-height:1;
+  color:rgba(255,255,255,.045);pointer-events:none;
+}
+.login-left > *{position:relative;z-index:1}
+.login-right{display:grid;place-items:center;padding:44px}
+
+/* ---------- 结果页 ---------- */
+.run-summary{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;border-top:2px solid var(--ink);border-bottom:1px solid var(--line)}
+.summary-cell{padding:16px 18px 16px 0}
+.summary-cell + .summary-cell{border-left:1px solid var(--line);padding-left:18px}
+.summary-cell b{display:block;font-family:var(--serif);font-size:24px;font-weight:700;line-height:1.2;margin-top:4px}
+.summary-cell span{font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3)}
+.summary-cell .status{display:flex;align-items:center;gap:8px;margin-top:6px}
+.status i{width:6px;height:6px;border-radius:50%;background:var(--amber);display:block}
+.status.ok i{background:var(--moss)}
+.status.bad i{background:var(--red)}
+
+.dossier{border:1px solid var(--line-2);background:var(--paper-2);display:grid;grid-template-columns:176px 1fr}
+.dossier + .dossier{margin-top:-1px}
+.dossier-score{padding:22px;border-right:1px solid var(--line);display:flex;flex-direction:column;gap:14px}
+.score-big{font-family:var(--serif);font-size:58px;font-weight:900;line-height:.85;letter-spacing:-.04em}
+.score-big small{display:block;font-family:var(--mono);font-size:9px;font-weight:400;letter-spacing:.16em;color:var(--ink-3);margin-top:10px}
+.meter{height:5px;background:var(--paper-3);position:relative;overflow:hidden}
+.meter i{position:absolute;inset:0 auto 0 0;background:var(--red);display:block}
+.meter--moss i{background:var(--moss)}
+.meter--amber i{background:var(--amber)}
+.score-note{font-size:10px;color:var(--ink-3);line-height:1.65}
+.dossier-body{padding:22px 24px;display:flex;flex-direction:column;gap:18px}
+.job-head{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;flex-wrap:wrap}
+.job-head h4{font-family:var(--serif);font-size:20px;font-weight:700;line-height:1.3}
+.job-head .co{font-family:var(--mono);font-size:10px;letter-spacing:.1em;color:var(--ink-3);margin-top:4px}
+.block h5{font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);margin-bottom:7px}
+.block p{font-size:12px;line-height:1.75;color:var(--ink-2)}
+.timeline{display:flex;align-items:center;gap:0;flex-wrap:wrap}
+.timeline .step{display:flex;align-items:center;gap:8px}
+.timeline .dot{width:7px;height:7px;border-radius:50%;border:1.5px solid var(--ink);background:var(--paper-2)}
+.timeline .dot.fill{background:var(--red);border-color:var(--red)}
+.timeline b{font-family:var(--mono);font-size:11px;font-weight:500}
+.timeline .dash{width:34px;height:1px;background:var(--line-2);margin:0 8px}
+.interview{border-left:2px solid var(--blue);padding:2px 0 2px 14px;display:flex;flex-direction:column;gap:8px}
+.interview .top{display:flex;align-items:baseline;gap:10px}
+.interview .top b{font-family:var(--serif);font-size:20px}
+.interview ul{display:flex;flex-direction:column;gap:3px;font-size:11.5px;color:var(--ink-2)}
+.interview li::before{content:"·";color:var(--blue);margin-right:6px}
+.fail{border:1px dashed var(--red);background:var(--red-wash);padding:12px 14px;font-size:11.5px;color:var(--red-deep)}
+
+.advice{border:1px solid var(--line-2);background:var(--paper);padding:24px}
+.advice h3{font-family:var(--serif);font-size:19px;padding-bottom:12px;border-bottom:1px solid var(--ink);margin-bottom:16px}
+.advice h4{font-family:var(--mono);font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--red);margin:18px 0 8px}
+.advice ol{counter-reset:rank;display:flex;flex-direction:column;gap:10px}
+.advice ol li{counter-increment:rank;display:grid;grid-template-columns:34px 1fr;gap:10px;font-size:12px;line-height:1.7;color:var(--ink-2)}
+.advice ol li::before{content:counter(rank,decimal-leading-zero);font-family:var(--serif);font-size:18px;font-weight:700;color:var(--ink-3);line-height:1.3}
+.advice ul li{font-size:12px;color:var(--ink-2);padding-left:14px;position:relative;line-height:1.8}
+.advice ul li::before{content:"—";position:absolute;left:0;color:var(--red)}
+
+/* ---------- 会话列表 ---------- */
+.filters{display:flex;align-items:center;gap:22px;border-bottom:1px solid var(--line);padding-bottom:0;flex-wrap:wrap}
+.filter{font-size:12px;color:var(--ink-3);padding:10px 0;border-bottom:2px solid transparent;transition:.18s}
+.filter b{font-family:var(--mono);font-size:9px;font-weight:400;margin-left:5px;color:var(--line-2)}
+.filter.on{color:var(--ink);border-color:var(--red)}
+.filter.on b{color:var(--red)}
+.filters .search{margin-left:auto;display:flex;align-items:center;gap:8px;padding-bottom:6px}
+.filters .search input{border:0;border-bottom:1px solid var(--line-2);background:none;padding:4px 2px;font-size:11px;width:150px}
+.filters .search input:focus{outline:none;border-color:var(--red)}
+.session-table{margin-top:6px}
+.session-row{display:grid;grid-template-columns:1.6fr 110px 150px 100px 96px;gap:16px;align-items:center;padding:15px 6px;border-bottom:1px solid var(--line);transition:background .18s}
+.session-row:hover{background:rgba(233,226,211,.4)}
+.session-row.head{padding:10px 6px;border-bottom:1px solid var(--ink)}
+.session-row.head span{font-family:var(--mono);font-size:8.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3)}
+.session-name{font-family:var(--serif);font-size:15px;font-weight:600;line-height:1.4}
+.session-id{font-family:var(--mono);font-size:9px;color:var(--ink-3);letter-spacing:.04em;margin-top:2px}
+.session-scores{font-family:var(--mono);font-size:11px;color:var(--ink-2);letter-spacing:.02em}
+.session-scores i{color:var(--line-2);font-style:normal;margin:0 4px}
+.session-date{font-family:var(--mono);font-size:9.5px;color:var(--ink-3);letter-spacing:.02em}
+.session-actions{display:flex;gap:12px;justify-content:flex-end}
+.session-actions a{font-size:10.5px;color:var(--ink-3);border-bottom:1px solid transparent}
+.session-actions a:hover{color:var(--red);border-color:var(--red)}
+.pagination{display:flex;align-items:center;justify-content:space-between;margin-top:18px;font-family:var(--mono);font-size:9.5px;color:var(--ink-3);letter-spacing:.08em}
+.pagination .pages{display:flex;gap:4px}
+.pagination .pages span{width:24px;height:24px;display:grid;place-items:center;border:1px solid var(--line)}
+.pagination .pages .on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+
+/* ---------- 记忆设置 ---------- */
+.mem-layout{display:grid;grid-template-columns:1.25fr .85fr;gap:28px;align-items:start}
+.switch-card{border:1px solid var(--line-2);background:var(--paper);padding:16px 18px;display:flex;align-items:center;justify-content:space-between;gap:18px}
+.switch-card p{font-size:10.5px;color:var(--ink-3);margin-top:2px;line-height:1.6}
+.switch{width:42px;height:22px;border-radius:999px;background:var(--moss);position:relative;flex:none;display:block}
+.switch::after{content:"";position:absolute;top:2px;right:2px;width:18px;height:18px;border-radius:50%;background:var(--paper-2)}
+.switch.off{background:var(--line-2)}
+.switch.off::after{right:auto;left:2px}
+.mem-tabs{display:flex;gap:18px;border-bottom:1px solid var(--line);margin-top:18px}
+.mem-tabs button{font-size:11.5px;color:var(--ink-3);padding:8px 0;border-bottom:2px solid transparent}
+.mem-tabs button.on{color:var(--ink);border-color:var(--red)}
+.mem-tabs b{font-family:var(--mono);font-size:9px;font-weight:400;color:var(--line-2);margin-left:4px}
+.mem-list{display:flex;flex-direction:column;gap:10px;margin-top:14px}
+.mem-item{border:1px solid var(--line);background:var(--paper);padding:13px 15px;display:flex;flex-direction:column;gap:8px}
+.mem-item--pending{border-left:2px solid var(--amber)}
+.mem-item--archived{opacity:.62}
+.mem-item p{font-size:12px;line-height:1.7;color:var(--ink-2)}
+.mem-meta{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-family:var(--mono);font-size:9px;letter-spacing:.05em;color:var(--ink-3)}
+.mem-meta .conf{color:var(--moss)}
+.mem-actions{display:flex;gap:14px;font-size:10.5px}
+.mem-actions a{color:var(--ink-3);border-bottom:1px solid var(--line-2)}
+.mem-actions a:hover{color:var(--red);border-color:var(--red)}
+.summary-panel{background:var(--ink);color:var(--paper);padding:24px;position:sticky;top:88px}
+.summary-panel .eyebrow{color:#a89a80}
+.summary-panel h3{font-family:var(--serif);font-size:19px;font-weight:700;margin-top:6px;line-height:1.4}
+.summary-meta{display:flex;align-items:center;gap:10px;margin-top:10px;font-family:var(--mono);font-size:9px;letter-spacing:.08em;color:#a89a80;flex-wrap:wrap}
+.summary-meta .v{border:1px solid #5b5344;padding:1px 6px;color:var(--paper)}
+.summary-body{margin-top:20px;display:flex;flex-direction:column;gap:14px}
+.summary-section b{display:block;font-family:var(--mono);font-size:8.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--red);margin-bottom:4px}
+.summary-section p{font-size:11.5px;line-height:1.75;color:#e7e0d0}
+.summary-actions{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:22px;padding-top:16px;border-top:1px solid #3b352b;flex-wrap:wrap}
+.btn--paper{border-color:#8f8572;color:var(--paper);font-size:11px;padding:8px 14px}
+.btn--paper:hover{box-shadow:3px 3px 0 #3b352b}
+.summary-actions .note{font-family:var(--mono);font-size:8.5px;letter-spacing:.06em;color:#8f8572}
+
+/* ---------- 状态示例 ---------- */
+.state-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-top:28px}
+.state-card{border:1px solid var(--line-2);background:var(--paper-2);padding:20px}
+.state-card h4{font-family:var(--mono);font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--red);margin-bottom:14px}
+.state-card p{font-size:10.5px;color:var(--ink-3);margin-top:12px;line-height:1.7}
+.skeleton{display:flex;flex-direction:column;gap:9px}
+.skeleton i{display:block;height:10px;background:linear-gradient(90deg,var(--paper-3) 25%,#f1ead9 50%,var(--paper-3) 75%);background-size:200% 100%;animation:shimmer 1.6s infinite linear}
+.skeleton i:nth-child(1){width:42%}
+.skeleton i:nth-child(2){width:88%}
+.skeleton i:nth-child(3){width:74%}
+.skeleton i:nth-child(4){width:56%}
+@keyframes shimmer{to{background-position:-200% 0}}
+.empty-demo{border:1px dashed var(--line-2);padding:26px 18px;text-align:center}
+.empty-demo .glyph{font-family:var(--serif);font-size:32px;color:var(--line-2);line-height:1}
+.empty-demo b{display:block;font-family:var(--serif);font-size:14px;margin-top:8px}
+.empty-demo span{display:block;font-size:10.5px;color:var(--ink-3);margin-top:4px}
+
+/* ---------- 落地映射 ---------- */
+.map-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:28px;margin-top:30px}
+.map-card{border:1px solid var(--line-2);background:var(--paper-2);padding:22px}
+.map-card h4{font-family:var(--serif);font-size:16px;padding-bottom:10px;border-bottom:1px solid var(--line);margin-bottom:12px}
+.map-card li{display:flex;justify-content:space-between;gap:16px;padding:8px 0;border-bottom:1px dotted var(--line);font-size:11px;flex-wrap:wrap}
+.map-card li:last-child{border-bottom:0}
+.map-card code{font-size:10px;color:var(--red-deep)}
+.map-card span{color:var(--ink-3);text-align:right}
+
+.footer{margin-top:110px;padding-top:20px;border-top:1px solid var(--ink);display:flex;justify-content:space-between;gap:24px;flex-wrap:wrap;font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;color:var(--ink-3)}
+
+/* ---------- 入场动效 ---------- */
+.reveal{opacity:0;transform:translateY(20px);transition:opacity .8s ease,transform .8s var(--ease);transition-delay:var(--d,0s)}
+.reveal.is-in{opacity:1;transform:none}
+@keyframes rise{from{opacity:0;transform:translateY(26px)}to{opacity:1;transform:none}}
+.cover-copy > *{animation:rise .9s var(--ease) both}
+.cover-copy > *:nth-child(2){animation-delay:.08s}
+.cover-copy > *:nth-child(3){animation-delay:.16s}
+.cover-copy > *:nth-child(4){animation-delay:.24s}
+.artifact{animation:rise 1s var(--ease) .2s both}
+
+@media (prefers-reduced-motion:reduce){
+  *{animation:none!important;transition:none!important}
+  .reveal{opacity:1;transform:none}
+}
+
+/* ---------- 响应式 ---------- */
+@media (max-width:1024px){
+  .cover{grid-template-columns:1fr;gap:44px;padding-top:64px}
+  .topnav{gap:16px;font-size:10px}
+  .artifact{height:470px;max-width:460px}
+  .swatches{grid-template-columns:repeat(2,1fr)}
+  .col-4,.col-5,.col-6,.col-7,.col-8,.col-9{grid-column:span 12}
+  .aside,.summary-panel{position:static}
+  .mem-layout,.map-grid{grid-template-columns:1fr}
+  .dossier{grid-template-columns:140px 1fr}
+  .run-summary{grid-template-columns:1fr 1fr}
+  .summary-cell{border-left:0!important;padding-left:0!important}
+  .session-row{grid-template-columns:1.6fr 100px 120px 90px}
+  .session-row .session-scores{display:none}
+}
+@media (max-width:720px){
+  .shell{padding:0 20px 90px}
+  .topnav{display:none}
+  .grid{gap:16px}
+  .cover h1{font-size:clamp(32px,9vw,44px)}
+  .cover h1 em{white-space:normal}
+  .artifact{max-width:100%}
+  .art-front{transform:none}
+  .art-back{display:none}
+  .meta-item{padding-right:18px;margin-right:18px}
+  .sec-head{flex-direction:column;align-items:flex-start;gap:10px}
+  .sec-desc{text-align:left}
+  .screen-head{flex-direction:column;align-items:flex-start;gap:8px}
+  .screen-note{text-align:left}
+  .dossier{grid-template-columns:1fr}
+  .dossier-score{border-right:0;border-bottom:1px solid var(--line);flex-direction:row;align-items:flex-end;flex-wrap:wrap}
+  .state-grid{grid-template-columns:1fr}
+  .session-row{grid-template-columns:1fr auto;row-gap:4px}
+  .session-row > :nth-child(1){grid-row:span 2}
+  .session-row > :nth-child(2){grid-column:2;grid-row:1;justify-self:start}
+  .session-row > :nth-child(3),.session-row > :nth-child(4){display:none}
+  .session-row > :nth-child(5){grid-column:2;grid-row:2;justify-self:end}
+  .login{grid-template-columns:1fr}
+  .login-left{padding:36px 28px}
+}
+</style>
+<noscript><style>.reveal{opacity:1;transform:none}</style></noscript>
+</head>
+<body>
+<div class="grain" aria-hidden="true"></div>
+
+<div class="shell">
+  <header class="topbar">
+    <a class="wordmark" href="#top">
+      <span class="seal">职</span>
+      <span>求职助手<small>CAREER DOSSIER SYSTEM</small></span>
+    </a>
+    <nav class="topnav" aria-label="设计稿目录">
+      <a href="#system"><span>00</span>设计基调</a>
+      <a href="#screen-login"><span>01</span>登录</a>
+      <a href="#screen-create"><span>02</span>创建分析</a>
+      <a href="#screen-result"><span>03</span>分析结果</a>
+      <a href="#screen-sessions"><span>04</span>会话列表</a>
+      <a href="#screen-memory"><span>05</span>记忆设置</a>
+      <a href="#states"><span>06</span>状态规范</a>
+      <span class="ver">v1.0</span>
+    </nav>
+  </header>
+
+  <section class="cover" id="top">
+    <div class="cover-copy">
+      <p class="cover-kicker">MULTI-AGENT CAREER ENGINE · UI DRAFT</p>
+      <h1>把每一次投递，<br /><em>当作一场有准备的交锋。</em></h1>
+      <p class="lede">
+        求职助手让五个智能体分工协作：读岗、审稿、改写、模拟面试、给出建议。
+        这套设计以「档案室」为概念——温暖的纸、克制的墨、朱砂般的印记，
+        让每一份岗位分析都像一份被认真归档的档案，而不是一屏又一屏的通用卡片。
+      </p>
+      <div class="cover-meta">
+        <div class="meta-item"><b>5</b><span>智能体协作</span></div>
+        <div class="meta-item"><b>≤5</b><span>岗位并行分析</span></div>
+        <div class="meta-item"><b>2</b><span>优化 / 面试轮次</span></div>
+        <div class="meta-item"><b>A11y</b><span>对比度 · 焦点 · 动效降级</span></div>
+      </div>
+    </div>
+
+    <div class="artifact" aria-hidden="true">
+      <div class="art-card art-back"></div>
+      <div class="art-card art-front">
+        <div class="art-head">
+          <div>
+            <h3>后端工程师</h3>
+            <p>云栖科技 · 上海 / 远程</p>
+          </div>
+          <div class="art-no">DOSSIER<br />NO. 02</div>
+        </div>
+        <div class="art-score"><b>86</b><span>MATCH<br />SCORE</span></div>
+        <div class="art-row"><span>简历版本</span><b>v2 定制</b></div>
+        <div class="art-row"><span>模拟面试</span><b>88 / 100</b></div>
+        <div class="art-row"><span>关键缺口</span><b>Kubernetes</b></div>
+        <div class="art-row"><span>建议</span><b>优先投递</b></div>
+        <span class="stamp art-stamp">已归档 · FILED</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec reveal" id="system">
+    <div class="sec-head">
+      <div>
+        <div class="sec-no">00 / DESIGN FOUNDATION</div>
+        <h2 class="sec-title">档案室：可被信任的分析工具</h2>
+      </div>
+      <p class="sec-desc">
+        求职是严肃决策。界面的气质应当像一份档案——有编号、有印记、有结论，
+        也有可追溯的修改记录。视觉上避免通用 SaaS 的蓝紫渐变与圆角卡片海洋。
+      </p>
+    </div>
+
+    <p class="lede" style="margin-top:30px">
+      关键词：<b>编辑排版</b> · <b>纸张质感</b> · <b>朱砂印记</b> · <b>硬边阴影</b>。
+      衬线标题承担情绪与结论，无衬线正文保证长文本阅读，等宽字体用于编号、分数、时间与所有可核对的数据。
+    </p>
+
+    <div class="swatches">
+      <div class="swatch">
+        <div class="swatch-chip" style="background:#f2eee4"></div>
+        <div class="swatch-body"><b>纸 Paper</b><code>#F2EEE4</code><span>页面底色，替代纯白</span></div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-chip" style="background:#faf7ef"></div>
+        <div class="swatch-body"><b>纸·亮 Paper Raised</b><code>#FAF7EF</code><span>卡片、画板内容区</span></div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-chip" style="background:#191712"></div>
+        <div class="swatch-body"><b>墨 Ink</b><code>#191712</code><span>正文、表头、深色面板</span></div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-chip" style="background:#b9402a"></div>
+        <div class="swatch-body"><b>朱砂 Vermilion</b><code>#B9402A</code><span>主色：行动、结论、印记</span></div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-chip" style="background:#3d5a45"></div>
+        <div class="swatch-body"><b>苔绿 Moss</b><code>#3D5A45</code><span>成功、达标、已开启</span></div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-chip" style="background:#94640f"></div>
+        <div class="swatch-body"><b>赭石 Amber</b><code>#94640F</code><span>待确认、风险、上限</span></div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-chip" style="background:#39566f"></div>
+        <div class="swatch-body"><b>靛蓝 Indigo</b><code>#39566F</code><span>面试反馈等第二信息轴</span></div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-chip" style="background:#d8cfbc"></div>
+        <div class="swatch-body"><b>线 Rule</b><code>#D8CFBC</code><span>1px 分隔线与描边</span></div>
+      </div>
+    </div>
+
+    <div class="type-spec">
+      <div class="type-row">
+        <div class="label">Display / 标题</div>
+        <div>
+          <div style="font-family:var(--serif);font-weight:900;font-size:clamp(28px,3.4vw,44px);line-height:1.25;letter-spacing:-.02em">
+            让结论先于数据被看见
+          </div>
+          <div class="hint" style="margin-top:6px">Noto Serif SC 900 · 用于页面标题、分数、档案卡标题</div>
+        </div>
+      </div>
+      <div class="type-row">
+        <div class="label">Body / 正文</div>
+        <div>
+          <div style="font-size:14px;line-height:1.9;max-width:38em;color:var(--ink-2)">
+            五个智能体依次完成岗位解析、简历评审、定制优化与模拟面试。正文使用无衬线字体，
+            行高 1.7–1.9，保证长简历与建议的连续阅读体验。
+          </div>
+          <div class="hint" style="margin-top:6px">Noto Sans SC / PingFang SC · 13–15px · 行高 1.7+</div>
+        </div>
+      </div>
+      <div class="type-row">
+        <div class="label">Meta / 元信息</div>
+        <div>
+          <div class="mono" style="font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3)">
+            THREAD 8F3A–2C · UPDATED 2026-11-23 18:40 · V2
+          </div>
+          <div class="hint" style="margin-top:6px">IBM Plex Mono · 9–11px · 字距 .12em · 所有编号与分数</div>
+        </div>
+      </div>
+      <div class="type-row">
+        <div class="label">Numeral / 数字</div>
+        <div class="row" style="gap:28px">
+          <div style="font-family:var(--serif);font-weight:900;font-size:54px;line-height:.9">86</div>
+          <div style="font-family:var(--serif);font-weight:900;font-size:54px;line-height:.9;color:var(--amber)">68</div>
+          <div style="font-family:var(--serif);font-weight:900;font-size:54px;line-height:.9;color:var(--red)">52</div>
+          <div class="hint" style="max-width:14em">分数按阈值着色：≥70 墨/苔绿，50–69 赭石，&lt;50 朱砂</div>
+        </div>
+      </div>
+    </div>
+
+    <table class="spec-table">
+      <thead>
+        <tr><th>Token</th><th>取值</th><th>用途</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>--radius</td><td>2px（卡片 / 输入 / 按钮）</td><td>用硬边与 1px 线替代大圆角，保持档案感</td></tr>
+        <tr><td>--shadow-print</td><td>0 1px 0 rgba(25,23,18,.04), 0 18px 44px -24px rgba(45,38,24,.5)</td><td>纸页浮起效果，只用于画板与浮层</td></tr>
+        <tr><td>--shadow-hard</td><td>3px 3px 0 var(--ink)</td><td>主按钮 hover 位移阴影</td></tr>
+        <tr><td>Spacing</td><td>4 / 8 / 12 / 16 / 24 / 32 / 48 / 64</td><td>沿用 4px 基准栅格</td></tr>
+        <tr><td>Motion</td><td>180ms / 400ms / 800ms，cubic-bezier(.2,.7,.2,1)</td><td>交互反馈短、入场揭示长；支持 reduced-motion</td></tr>
+        <tr><td>Layout</td><td>内容 1240px，12 列栅格，断点 1024 / 720</td><td>桌面双栏、平板单栏、移动端纵向堆叠</td></tr>
+      </tbody>
+    </table>
+
+    <table class="spec-table" style="margin-top:34px">
+      <thead>
+        <tr><th>现有变量</th><th>新取值</th><th>说明</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>--color-bg</td><td><code>#F2EEE4</code></td><td>由冷灰改为暖纸色</td></tr>
+        <tr><td>--color-surface</td><td><code>#FAF7EF</code></td><td>卡片不再是纯白</td></tr>
+        <tr><td>--color-text</td><td><code>#191712</code></td><td>墨黑，略暖</td></tr>
+        <tr><td>--color-primary</td><td><code>#B9402A</code></td><td>朱砂红，替换原钢蓝</td></tr>
+        <tr><td>--color-success / warning / danger</td><td><code>#3D5A45</code> / <code>#94640F</code> / <code>#B9402A</code></td><td>降低饱和度，与纸色协调</td></tr>
+        <tr><td>--font-sans</td><td>Noto Sans SC, PingFang SC</td><td>正文</td></tr>
+        <tr><td>--font-serif（新增）</td><td>Noto Serif SC, Songti SC</td><td>标题与分数</td></tr>
+        <tr><td>--font-mono</td><td>IBM Plex Mono, Cascadia Code</td><td>编号与数据</td></tr>
+        <tr><td>--radius-sm / md / lg</td><td>2px / 3px / 2px</td><td>统一为近直角</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <div class="screen-head reveal" id="screen-login">
+    <div class="screen-title">
+      <span class="no">01</span>
+      <h3>登录</h3>
+      <span>/ AUTH</span>
+    </div>
+    <p class="screen-note">
+      左侧用深墨与衬线大字建立品牌记忆，右侧保留单列表单。
+      登录是低频率入口，不需要复杂信息，只需要一次有力的第一印象。
+    </p>
+  </div>
+
+  <section class="screen reveal">
+    <div class="browserbar">
+      <div class="dots"><i></i><i></i><i></i></div>
+      <span class="url">career.local / login</span>
+      <span class="cap">DESKTOP 1440</span>
+    </div>
+    <div class="canvas canvas--flush">
+      <div class="login">
+        <div class="login-left">
+          <div>
+            <p class="eyebrow" style="color:#a89a80">CAREER DOSSIER · MULTI-AGENT</p>
+            <h2 style="font-family:var(--serif);font-size:clamp(28px,3.2vw,42px);line-height:1.45;font-weight:900;margin-top:18px;letter-spacing:-.01em">
+              把每一次投递，<br />当作一场<em style="font-style:normal;color:#e8846b">有准备的交锋</em>。
+            </h2>
+            <p style="margin-top:20px;font-size:12.5px;line-height:1.9;color:#c9c0ad;max-width:30em">
+              读岗、审稿、改写、预演、建议。五个智能体在同一条工作流里协作，
+              把模糊的「我感觉还行」变成可核对的分数、缺口与版本。
+            </p>
+          </div>
+          <div>
+            <div style="display:flex;gap:0;border-top:1px solid #3b352b;padding-top:16px;flex-wrap:wrap">
+              <div style="padding-right:26px;margin-right:26px;border-right:1px solid #3b352b">
+                <b style="display:block;font-family:var(--serif);font-size:22px">5</b>
+                <span class="mono" style="font-size:8.5px;letter-spacing:.16em;color:#8f8572">AGENTS</span>
+              </div>
+              <div style="padding-right:26px;margin-right:26px;border-right:1px solid #3b352b">
+                <b style="display:block;font-family:var(--serif);font-size:22px">≤5</b>
+                <span class="mono" style="font-size:8.5px;letter-spacing:.16em;color:#8f8572">JOBS / RUN</span>
+              </div>
+              <div>
+                <b style="display:block;font-family:var(--serif);font-size:22px">2</b>
+                <span class="mono" style="font-size:8.5px;letter-spacing:.16em;color:#8f8572">ROUNDS</span>
+              </div>
+            </div>
+            <p class="mono" style="margin-top:18px;font-size:8.5px;letter-spacing:.14em;color:#6d6452">
+              会话与长期记忆按账号隔离 · 简历仅服务端解析
+            </p>
+          </div>
+        </div>
+        <div class="login-right">
+          <div style="width:100%;max-width:330px">
+            <div class="row" style="gap:9px;margin-bottom:26px">
+              <span class="seal" style="width:28px;height:28px;font-size:14px">职</span>
+              <span style="font-family:var(--serif);font-weight:700;font-size:14px">求职助手</span>
+            </div>
+            <h3 style="font-family:var(--serif);font-size:24px;font-weight:700">登录工作台</h3>
+            <p style="font-size:11.5px;color:var(--ink-3);margin-top:6px">使用邮箱进入你的分析档案。</p>
+
+            <div class="stack" style="margin-top:26px;gap:14px">
+              <div class="field">
+                <label for="login-email">邮箱</label>
+                <input class="input" id="login-email" type="email" value="liu.hao@example.com" />
+              </div>
+              <div class="field">
+                <label for="login-password">密码</label>
+                <input class="input" id="login-password" type="password" value="········" />
+                <span class="hint">至少 8 位，区分大小写。</span>
+              </div>
+              <button class="btn btn--primary" type="button" style="width:100%;margin-top:4px">
+                进入工作台 <span class="arrow">→</span>
+              </button>
+              <p style="font-size:11px;color:var(--ink-3);text-align:center;margin-top:2px">
+                还没有账号？<a class="link" href="#screen-login">注册</a>
+              </p>
+            </div>
+            <p class="mono" style="margin-top:24px;font-size:8.5px;letter-spacing:.1em;color:var(--ink-3);line-height:1.9">
+              BY CONTINUING · 你同意仅将简历用于本次分析
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="screen-head reveal" id="screen-create">
+    <div class="screen-title">
+      <span class="no">02</span>
+      <h3>创建分析</h3>
+      <span>/ NEW RUN</span>
+    </div>
+    <p class="screen-note">
+      表单拆成「目标 / 岗位 / 简历」三段，用编号与细线组织；
+      右侧常驻运行说明，解释系统会做什么、边界在哪里，降低提交前的犹豫。
+    </p>
+  </div>
+
+  <section class="screen reveal">
+    <div class="browserbar">
+      <div class="dots"><i></i><i></i><i></i></div>
+      <span class="url">career.local /</span>
+      <span class="cap">DESKTOP 1440</span>
+    </div>
+    <div class="canvas">
+      <div class="appbar">
+        <span class="brand"><i>职</i>求职助手</span>
+        <nav>
+          <a class="on" href="#screen-create">创建分析</a>
+          <a href="#screen-sessions">查询会话</a>
+          <a href="#screen-sessions">会话列表</a>
+          <a href="#screen-memory">记忆设置</a>
+        </nav>
+        <span class="user"><span>liu.hao@example.com</span><span>退出登录</span><span class="avatar">刘</span></span>
+      </div>
+
+      <div class="ptitle">
+        <div>
+          <div class="crumb">工作台 / <b>新建分析</b></div>
+          <h1>创建分析</h1>
+          <p>填写求职目标、目标岗位与简历，一次获取多岗位匹配评分与优化建议。</p>
+        </div>
+        <span class="tag">草稿自动保留在本地</span>
+      </div>
+
+      <div class="grid">
+        <div class="col-8 stack">
+          <div class="field">
+            <label for="goal">01 · 求职目标</label>
+            <textarea class="textarea" id="goal" rows="2">寻找一份高级后端工程师工作，偏好远程或上海，希望团队有真实的高并发场景。</textarea>
+          </div>
+
+          <div>
+            <div class="row" style="justify-content:space-between;margin-bottom:10px">
+              <span class="eyebrow">02 · 目标岗位</span>
+              <span class="counter">2 / 5 · 还可新增 3 个</span>
+            </div>
+            <div class="job-edit job-edit--focus">
+              <div class="job-edit-head">
+                <span class="job-no"><b>01</b> 岗位</span>
+                <span class="del">删除岗位</span>
+              </div>
+              <div class="field">
+                <label for="job1-title">岗位标题</label>
+                <input class="input" id="job1-title" value="高级后端工程师" />
+              </div>
+              <div class="field">
+                <label for="job1-jd">岗位 JD · 原始职位描述</label>
+                <textarea class="textarea" id="job1-jd" rows="3">负责交易核心链路的服务设计与稳定性建设；要求 5 年以上后端经验，熟悉 Go / Java、分布式事务、消息队列与高并发系统；有 Kubernetes 落地经验者优先。</textarea>
+                <div class="row" style="justify-content:space-between">
+                  <span class="hint">粘贴完整 JD，系统会自动抽取硬性要求与关键词。</span>
+                  <span class="counter">128 字</span>
+                </div>
+              </div>
+            </div>
+            <div class="job-edit">
+              <div class="job-edit-head">
+                <span class="job-no"><b>02</b> 岗位</span>
+                <span class="del">删除岗位</span>
+              </div>
+              <div class="field">
+                <label for="job2-title">岗位标题</label>
+                <input class="input" id="job2-title" value="数据平台工程师（实时方向）" />
+              </div>
+              <div class="field">
+                <label for="job2-jd">岗位 JD · 原始职位描述</label>
+                <textarea class="textarea" id="job2-jd" rows="2">建设实时数据链路与数仓模型，负责 Flink / Kafka 任务的稳定性与成本优化；要求熟悉 SQL、数仓分层与数据治理。</textarea>
+              </div>
+            </div>
+            <button class="btn btn--ghost btn--sm" type="button" style="margin-top:10px">＋ 新增岗位</button>
+          </div>
+
+          <div>
+            <div class="row" style="justify-content:space-between;margin-bottom:10px">
+              <span class="eyebrow">03 · 简历</span>
+              <div class="seg">
+                <button class="on" type="button">粘贴文本</button>
+                <button type="button">上传文件</button>
+              </div>
+            </div>
+            <div class="field">
+              <label for="resume">简历内容</label>
+              <textarea class="textarea" id="resume" rows="4">刘昊 · 后端工程师 · 6 年经验
+某电商平台 ｜ 核心交易 ｜ 2021–至今
+· 主导订单链路重构，峰值 QPS 从 8k 提升至 26k，P99 延迟下降 42%。
+· 落地 Kubernetes 多集群发布，发布失败率下降 60%。</textarea>
+            </div>
+            <div class="row" style="margin-top:8px">
+              <span class="tag">支持 PDF / DOCX / 图片</span>
+              <span class="tag tag--moss">服务端解析 · OCR 兜底</span>
+              <span class="hint">解析后的文本可继续手动编辑。</span>
+            </div>
+          </div>
+
+          <div class="row" style="justify-content:space-between;border-top:1px solid var(--ink);padding-top:18px;margin-top:4px">
+            <div>
+              <button class="btn btn--primary" type="button">开始分析 <span class="arrow">→</span></button>
+              <p class="hint" style="margin-top:8px">预计 40–90 秒；关闭页面后可在会话列表查看结果。</p>
+            </div>
+            <span class="counter">2 个岗位 · 1 份简历</span>
+          </div>
+        </div>
+
+        <aside class="col-4">
+          <div class="aside">
+            <h3>分析将如何运行</h3>
+            <p class="sub">提交后，五个智能体按顺序协作；岗位之间并行，互不阻塞。</p>
+            <div style="margin-top:6px">
+              <div class="agent">
+                <div class="agent-top"><i>01</i><b>职位分析师</b></div>
+                <p>读取 JD，抽取硬性要求、加分项与关键词，判断文本是否为有效岗位。</p>
+              </div>
+              <div class="agent">
+                <div class="agent-top"><i>02</i><b>简历评审</b></div>
+                <p>按技能、经验、项目、教育四维打分，列出匹配项、缺失项与问题。</p>
+              </div>
+              <div class="agent">
+                <div class="agent-top"><i>03</i><b>简历优化</b></div>
+                <p>低于阈值时按岗位独立改写，生成互不覆盖的定制版本并重新评审。</p>
+              </div>
+              <div class="agent">
+                <div class="agent-top"><i>04</i><b>模拟面试</b></div>
+                <p>基于岗位与当前简历版本评估，给出分数、亮点与需补强的缺口。</p>
+              </div>
+              <div class="agent">
+                <div class="agent-top"><i>05</i><b>职业顾问</b></div>
+                <p>汇总所有岗位结果，输出投递优先级、逐岗建议与下一步行动。</p>
+              </div>
+            </div>
+            <ul class="rule-list">
+              <li>单次最多 5 个岗位，超限不会启动工作流</li>
+              <li>匹配分低于 70 触发该岗位的优化回路</li>
+              <li>优化与面试各最多 2 轮，避免无限循环</li>
+            </ul>
+            <p class="privacy">简历只在服务端解析，运行时状态仅保存文件引用与解析后的纯文本，不保存二进制内容。</p>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+  <div class="screen-head reveal" id="screen-result">
+    <div class="screen-title">
+      <span class="no">03</span>
+      <h3>分析结果</h3>
+      <span>/ RUN DOSSIER</span>
+    </div>
+    <p class="screen-note">
+      结果页的核心是「分数—缺口—行动」三段式。每个岗位是一份档案：
+      左侧大分数与印记给出结论，右侧展开证据、优化轨迹与面试反馈。
+    </p>
+  </div>
+
+  <section class="screen reveal">
+    <div class="browserbar">
+      <div class="dots"><i></i><i></i><i></i></div>
+      <span class="url">career.local / runs / 8f3a-2c41</span>
+      <span class="cap">DESKTOP 1440</span>
+    </div>
+    <div class="canvas">
+      <div class="appbar">
+        <span class="brand"><i>职</i>求职助手</span>
+        <nav>
+          <a href="#screen-create">创建分析</a>
+          <a class="on" href="#screen-result">查询会话</a>
+          <a href="#screen-sessions">会话列表</a>
+          <a href="#screen-memory">记忆设置</a>
+        </nav>
+        <span class="user"><span>liu.hao@example.com</span><span>退出登录</span><span class="avatar">刘</span></span>
+      </div>
+
+      <div class="ptitle">
+        <div>
+          <div class="crumb">会话 / <b>8F3A–2C41</b></div>
+          <h1>后端 · 数据平台 · 前端</h1>
+          <p>2026-11-23 18:40 完成 · 3 个岗位 · 下载简历版本与快照可追溯。</p>
+        </div>
+        <div class="row">
+          <button class="btn btn--ghost btn--sm" type="button">查看快照</button>
+          <button class="btn btn--primary btn--sm" type="button">新建分析</button>
+        </div>
+      </div>
+
+      <div class="run-summary" style="margin-bottom:24px">
+        <div class="summary-cell">
+          <span>RUN STATUS</span>
+          <div class="status"><i></i><b style="font-family:var(--serif);font-size:20px;display:inline">部分成功</b></div>
+          <p class="hint" style="margin-top:4px">3 个岗位中 2 个可用</p>
+        </div>
+        <div class="summary-cell"><span>最高匹配分</span><b>86</b><p class="hint" style="margin-top:2px">高级后端工程师</p></div>
+        <div class="summary-cell"><span>优化轮次</span><b>3</b><p class="hint" style="margin-top:2px">跨 2 个岗位</p></div>
+        <div class="summary-cell"><span>模拟面试</span><b>2</b><p class="hint" style="margin-top:2px">1 场达标 · 1 场待补强</p></div>
+      </div>
+
+      <div class="stack">
+        <article class="dossier">
+          <div class="dossier-score">
+            <div class="score-big">86<small>MATCH SCORE</small></div>
+            <div class="meter meter--moss"><i style="width:86%"></i></div>
+            <div><span class="stamp stamp--moss">建议投递</span></div>
+            <p class="score-note">超过阈值 70 · 使用 v2 定制简历 · 面试 88</p>
+          </div>
+          <div class="dossier-body">
+            <div class="job-head">
+              <div>
+                <h4>高级后端工程师</h4>
+                <div class="co">云栖科技 · 上海 / 远程</div>
+              </div>
+              <div class="tag-list">
+                <span class="tag tag--moss">v2 定制简历</span>
+                <span class="tag">2 轮优化</span>
+              </div>
+            </div>
+            <div class="block">
+              <h5>匹配亮点</h5>
+              <div class="tag-list">
+                <span class="tag tag--moss">Python</span>
+                <span class="tag tag--moss">分布式系统</span>
+                <span class="tag tag--moss">高并发</span>
+                <span class="tag tag--moss">交易链路</span>
+              </div>
+            </div>
+            <div class="block">
+              <h5>缺失项与问题</h5>
+              <div class="tag-list" style="margin-bottom:6px">
+                <span class="tag tag--amber">Kubernetes</span>
+                <span class="tag tag--amber">可观测性</span>
+              </div>
+              <p>项目描述缺少量化结果：建议补上 QPS、P99 延迟或成本下降的具体数字。</p>
+            </div>
+            <div class="block">
+              <h5>优化轨迹</h5>
+              <div class="timeline">
+                <span class="step"><span class="dot"></span><b>62</b></span>
+                <span class="dash"></span>
+                <span class="step"><span class="dot fill"></span><b>78</b><span class="hint">第 1 轮</span></span>
+                <span class="dash"></span>
+                <span class="step"><span class="dot fill"></span><b>86</b><span class="hint">第 2 轮</span></span>
+              </div>
+            </div>
+            <div class="interview">
+              <div class="top"><b>88</b><span class="hint">/ 100 · 模拟面试</span><span class="stamp stamp--moss" style="margin-left:auto">已完成</span></div>
+              <ul>
+                <li>亮点：能清晰说明容量评估与降级取舍。</li>
+                <li>改进：补充一次真实故障复盘中的定位过程。</li>
+              </ul>
+            </div>
+          </div>
+        </article>
+
+        <article class="dossier">
+          <div class="dossier-score">
+            <div class="score-big" style="color:var(--amber)">68<small>MATCH SCORE</small></div>
+            <div class="meter meter--amber"><i style="width:68%"></i></div>
+            <div><span class="stamp stamp--amber">达到轮数上限</span></div>
+            <p class="score-note">未达阈值 70 · 已用满 2 轮优化</p>
+          </div>
+          <div class="dossier-body">
+            <div class="job-head">
+              <div>
+                <h4>数据平台工程师（实时方向）</h4>
+                <div class="co">星野数据 · 杭州</div>
+              </div>
+              <div class="tag-list">
+                <span class="tag">v2 定制简历</span>
+                <span class="tag tag--amber">风险</span>
+              </div>
+            </div>
+            <div class="block">
+              <h5>缺失项与问题</h5>
+              <div class="tag-list" style="margin-bottom:6px">
+                <span class="tag tag--amber">Flink 生产经验</span>
+                <span class="tag tag--amber">数仓建模</span>
+                <span class="tag tag--amber">实时链路</span>
+              </div>
+              <p>现有经历以业务后端为主，实时数据链路证据偏弱；建议先补充一个可验证的流处理项目。</p>
+            </div>
+            <div class="block">
+              <h5>优化轨迹</h5>
+              <div class="timeline">
+                <span class="step"><span class="dot"></span><b>64</b></span>
+                <span class="dash"></span>
+                <span class="step"><span class="dot fill"></span><b>68</b><span class="hint">第 2 轮 · 上限</span></span>
+              </div>
+            </div>
+            <div class="interview" style="border-color:var(--amber)">
+              <div class="top"><b>71</b><span class="hint">/ 100 · 模拟面试</span><span class="stamp stamp--amber" style="margin-left:auto">待补强</span></div>
+              <ul>
+                <li>亮点：数据治理意识清晰，能解释指标口径。</li>
+                <li>缺口：无法说明 Flink 反压与状态后端的具体处理。</li>
+              </ul>
+            </div>
+          </div>
+        </article>
+
+        <article class="dossier">
+          <div class="dossier-score">
+            <div class="score-big" style="color:var(--line-2)">—<small>MATCH SCORE</small></div>
+            <div class="meter"><i style="width:0"></i></div>
+            <div><span class="stamp">分析失败</span></div>
+            <p class="score-note">岗位解析未返回可用结构</p>
+          </div>
+          <div class="dossier-body">
+            <div class="job-head">
+              <div>
+                <h4>前端工程师</h4>
+                <div class="co">公司未标注</div>
+              </div>
+              <span class="tag">job-3</span>
+            </div>
+            <div class="fail">岗位分析失败：模型返回内容不是有效 JSON。请检查岗位文本是否完整，或在会话列表重新发起分析。</div>
+          </div>
+        </article>
+
+        <div class="advice">
+          <h3>求职建议</h3>
+          <h4>投递优先级</h4>
+          <ol>
+            <li><span><b>高级后端工程师</b>（云栖科技）— 匹配分 86，使用 v2 定制简历优先投递；理由：分布式与高并发经历与岗位高度重合。</span></li>
+            <li><span><b>数据平台工程师</b>（星野数据）— 匹配分 68，建议补强实时链路项目后再投递，避免用同一版本简历覆盖。</span></li>
+          </ol>
+          <h4>各岗位建议</h4>
+          <ul>
+            <li>后端岗位：把「订单链路重构」改写为问题—动作—指标结构，并补上 Kubernetes 的落地范围。</li>
+            <li>数据岗位：单独维护一版简历，突出 SQL、数仓分层与流处理，不要与后端版本混用。</li>
+          </ul>
+          <h4>下一步行动</h4>
+          <ul>
+            <li>先投递后端岗位，并预约一次针对该岗位的模拟面试。</li>
+            <li>为数据岗位补充一个可验证的 Flink 项目，再重新发起分析。</li>
+          </ul>
+          <div class="row" style="margin-top:20px;padding-top:14px;border-top:1px solid var(--line);gap:10px">
+            <span class="eyebrow">版本快照</span>
+            <span class="tag">step 21 · 18:42</span>
+            <span class="tag">step 17 · 18:41</span>
+            <span class="tag">step 12 · 18:40</span>
+            <span class="hint" style="margin-left:auto">可读取任一 checkpoint 的历史状态</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="screen-head reveal" id="screen-sessions">
+    <div class="screen-title">
+      <span class="no">04</span>
+      <h3>会话列表</h3>
+      <span>/ ARCHIVE</span>
+    </div>
+    <p class="screen-note">
+      列表不是卡片瀑布，而是一张可扫描的档案目录：标题、状态印记、岗位得分、更新时间。
+      行内操作克制，删除使用二次确认，避免误触。
+    </p>
+  </div>
+
+  <section class="screen reveal">
+    <div class="browserbar">
+      <div class="dots"><i></i><i></i><i></i></div>
+      <span class="url">career.local / sessions</span>
+      <span class="cap">DESKTOP 1440</span>
+    </div>
+    <div class="canvas">
+      <div class="appbar">
+        <span class="brand"><i>职</i>求职助手</span>
+        <nav>
+          <a href="#screen-create">创建分析</a>
+          <a href="#screen-result">查询会话</a>
+          <a class="on" href="#screen-sessions">会话列表</a>
+          <a href="#screen-memory">记忆设置</a>
+        </nav>
+        <span class="user"><span>liu.hao@example.com</span><span>退出登录</span><span class="avatar">刘</span></span>
+      </div>
+
+      <div class="ptitle">
+        <div>
+          <div class="crumb">工作台 / <b>会话列表</b></div>
+          <h1>会话</h1>
+          <p>每次分析都会留下一条可追溯的线程记录；按状态或标题快速定位。</p>
+        </div>
+        <button class="btn btn--primary btn--sm" type="button">＋ 新建分析</button>
+      </div>
+
+      <div class="filters" data-tabs>
+        <button class="filter on" type="button">全部 <b>12</b></button>
+        <button class="filter" type="button">成功 <b>9</b></button>
+        <button class="filter" type="button">部分成功 <b>1</b></button>
+        <button class="filter" type="button">失败 <b>1</b></button>
+        <button class="filter" type="button">进行中 <b>1</b></button>
+        <label class="search">
+          <span class="mono" style="font-size:9px;color:var(--ink-3)">SEARCH</span>
+          <input type="search" placeholder="标题或 thread_id" />
+        </label>
+      </div>
+
+      <div class="session-table">
+        <div class="session-row head">
+          <span>会话</span><span>状态</span><span>岗位得分</span><span>更新时间</span><span style="text-align:right">操作</span>
+        </div>
+        <div class="session-row">
+          <div>
+            <div class="session-name">后端 · 数据平台 · 前端</div>
+            <div class="session-id">THREAD 8F3A–2C41</div>
+          </div>
+          <span class="stamp stamp--amber">部分成功</span>
+          <span class="session-scores">86<i>/</i>68<i>/</i>—</span>
+          <span class="session-date">11-23 18:40</span>
+          <span class="session-actions"><a href="#screen-result">查看</a><a href="#screen-sessions">删除</a></span>
+        </div>
+        <div class="session-row">
+          <div>
+            <div class="session-name">资深 Go 工程师</div>
+            <div class="session-id">THREAD 2C19–7780</div>
+          </div>
+          <span class="stamp stamp--moss">全部成功</span>
+          <span class="session-scores">89<i>/</i>74</span>
+          <span class="session-date">11-22 21:05</span>
+          <span class="session-actions"><a href="#screen-result">查看</a><a href="#screen-sessions">删除</a></span>
+        </div>
+        <div class="session-row">
+          <div>
+            <div class="session-name">平台工程 / SRE</div>
+            <div class="session-id">THREAD 77B0–1F02</div>
+          </div>
+          <span class="stamp stamp--moss">全部成功</span>
+          <span class="session-scores">82<i>/</i>80<i>/</i>79</span>
+          <span class="session-date">11-21 09:12</span>
+          <span class="session-actions"><a href="#screen-result">查看</a><a href="#screen-sessions">删除</a></span>
+        </div>
+        <div class="session-row">
+          <div>
+            <div class="session-name">海外远程前端</div>
+            <div class="session-id">THREAD 19AA–5C33</div>
+          </div>
+          <span class="stamp">失败</span>
+          <span class="session-scores">—</span>
+          <span class="session-date">11-20 16:48</span>
+          <span class="session-actions"><a href="#screen-result">查看</a><a href="#screen-sessions">删除</a></span>
+        </div>
+        <div class="session-row">
+          <div>
+            <div class="session-name">数据仓库工程师（旧版）</div>
+            <div class="session-id">THREAD 5E2D–0B11</div>
+          </div>
+          <span class="stamp stamp--gray">进行中</span>
+          <span class="session-scores" style="color:var(--ink-3)">评审中…</span>
+          <span class="session-date">11-20 14:02</span>
+          <span class="session-actions"><a href="#screen-result">查看</a><a href="#screen-sessions">删除</a></span>
+        </div>
+      </div>
+
+      <div class="pagination">
+        <span>共 12 条 · 每页 5 条</span>
+        <div class="pages">
+          <span class="on">1</span><span>2</span><span>3</span><span>→</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="screen-head reveal" id="screen-memory">
+    <div class="screen-title">
+      <span class="no">05</span>
+      <h3>记忆设置</h3>
+      <span>/ MEMORY</span>
+    </div>
+    <p class="screen-note">
+      记忆是这套产品最需要「信任感」的地方。左侧展示可编辑、可删除的记忆条目，
+      右侧用深色摘要面板呈现会话结论，明确区分「会话内摘要」与「跨会话长期记忆」。
+    </p>
+  </div>
+
+  <section class="screen reveal">
+    <div class="browserbar">
+      <div class="dots"><i></i><i></i><i></i></div>
+      <span class="url">career.local / settings / memory</span>
+      <span class="cap">DESKTOP 1440</span>
+    </div>
+    <div class="canvas">
+      <div class="appbar">
+        <span class="brand"><i>职</i>求职助手</span>
+        <nav>
+          <a href="#screen-create">创建分析</a>
+          <a href="#screen-result">查询会话</a>
+          <a href="#screen-sessions">会话列表</a>
+          <a class="on" href="#screen-memory">记忆设置</a>
+        </nav>
+        <span class="user"><span>liu.hao@example.com</span><span>退出登录</span><span class="avatar">刘</span></span>
+      </div>
+
+      <div class="ptitle">
+        <div>
+          <div class="crumb">设置 / <b>记忆</b></div>
+          <h1>记忆设置</h1>
+          <p>长期记忆只保存偏好、目标、事实与约束，并在需要时注入提示词；你可以随时编辑或清空。</p>
+        </div>
+        <span class="counter">按账号隔离 · 仅本人可见</span>
+      </div>
+
+      <div class="mem-layout">
+        <div>
+          <div class="switch-card">
+            <div>
+              <b style="font-family:var(--serif);font-size:15px">长期记忆</b>
+              <p>开启后，跨会话记住你的偏好与目标；关闭不影响已有会话。</p>
+            </div>
+            <span class="switch" role="switch" aria-checked="true" aria-label="长期记忆开关"></span>
+          </div>
+
+          <div class="mem-tabs" data-tabs>
+            <button class="on" type="button">全部 <b>8</b></button>
+            <button type="button">待确认 <b>2</b></button>
+            <button type="button">已归档 <b>1</b></button>
+            <button type="button" data-static style="margin-left:auto;color:var(--red)">一键清空</button>
+          </div>
+
+          <div class="row" style="margin-top:10px;gap:6px">
+            <span class="tag">全部类型</span>
+            <span class="tag">偏好</span>
+            <span class="tag">目标</span>
+            <span class="tag">事实</span>
+            <span class="tag">约束</span>
+          </div>
+
+          <div class="mem-list">
+            <div class="mem-item">
+              <p>优先考虑远程或上海的机会，不接受频率高于每月一次的出差。</p>
+              <div class="mem-meta">
+                <span class="tag tag--moss">偏好</span>
+                <span class="conf">置信度 0.92</span>
+                <span>2027-05-20 到期</span>
+                <span class="mem-actions" style="margin-left:auto"><a href="#screen-memory">编辑</a><a href="#screen-memory">删除</a></span>
+              </div>
+            </div>
+            <div class="mem-item">
+              <p>目标：3 个月内拿到高级后端或平台工程方向的 offer，目标薪资 45–55k。</p>
+              <div class="mem-meta">
+                <span class="tag tag--blue">目标</span>
+                <span class="conf">置信度 0.88</span>
+                <span>长期有效</span>
+                <span class="mem-actions" style="margin-left:auto"><a href="#screen-memory">编辑</a><a href="#screen-memory">删除</a></span>
+              </div>
+            </div>
+            <div class="mem-item mem-item--pending">
+              <p>目前在职，期望两周内完成交接，可接受最早下月中旬入职。</p>
+              <div class="mem-meta">
+                <span class="tag tag--amber">事实 · 待确认</span>
+                <span class="conf">置信度 0.76</span>
+                <span>2027-02-01 到期</span>
+                <span class="mem-actions" style="margin-left:auto"><a href="#screen-memory" style="color:var(--moss);border-color:var(--moss)">确认</a><a href="#screen-memory">忽略</a></span>
+              </div>
+            </div>
+            <div class="mem-item">
+              <p>不投递长期 996 的团队；简历与建议中不出现前公司客户名称。</p>
+              <div class="mem-meta">
+                <span class="tag tag--red">约束</span>
+                <span class="conf">置信度 0.90</span>
+                <span>长期有效</span>
+                <span class="mem-actions" style="margin-left:auto"><a href="#screen-memory">编辑</a><a href="#screen-memory">删除</a></span>
+              </div>
+            </div>
+            <div class="mem-item mem-item--archived">
+              <p>倾向 100% 远程岗位（已超过 90 天未再提及，自动归档）。</p>
+              <div class="mem-meta">
+                <span class="tag">偏好 · 已归档</span>
+                <span>TTL 归档 · 2026-10-12</span>
+                <span class="mem-actions" style="margin-left:auto"><a href="#screen-memory">恢复</a><a href="#screen-memory">删除</a></span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <aside class="summary-panel">
+          <p class="eyebrow">SESSION SUMMARY</p>
+          <h3>后端 · 数据平台 · 前端</h3>
+          <div class="summary-meta">
+            <span>THREAD 8F3A–2C41</span>
+            <span class="v">v3</span>
+            <span>更新 18:42</span>
+          </div>
+          <div class="summary-body">
+            <div class="summary-section">
+              <b>已确认事实</b>
+              <p>6 年后端经验，主导过订单链路重构，峰值 QPS 26k。</p>
+            </div>
+            <div class="summary-section">
+              <b>未解决问题</b>
+              <p>数据岗位缺少 Flink 生产证据；前端岗位 JD 解析失败待重试。</p>
+            </div>
+            <div class="summary-section">
+              <b>用户偏好</b>
+              <p>远程或上海；重视团队技术深度与真实高并发场景。</p>
+            </div>
+            <div class="summary-section">
+              <b>约束条件</b>
+              <p>不接受频繁出差；简历不出现前公司客户名称。</p>
+            </div>
+            <div class="summary-section">
+              <b>已做决定</b>
+              <p>优先投递后端岗位，使用 v2 定制简历；数据岗位延后。</p>
+            </div>
+          </div>
+          <div class="summary-actions">
+            <button class="btn btn--paper" type="button">重新生成摘要</button>
+            <span class="note">每 12 轮滚动更新 · 保留最近 6 轮</span>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec reveal" id="states">
+    <div class="sec-head">
+      <div>
+        <div class="sec-no">06 / STATES & MOTION</div>
+        <h2 class="sec-title">状态与交互规范</h2>
+      </div>
+      <p class="sec-desc">
+        长任务是这套产品的常态。任何等待都必须说明「谁在做什么」；
+        任何失败都必须定位到字段或岗位，并提供可重试的出口。
+      </p>
+    </div>
+
+    <div class="state-grid">
+      <div class="state-card">
+        <h4>LOADING / 分析进行中</h4>
+        <div class="skeleton"><i></i><i></i><i></i><i></i></div>
+        <p>骨架屏下方固定阶段文案：「简历评审正在为 2 个岗位打分」。不使用无意义的旋转图标。</p>
+      </div>
+      <div class="state-card">
+        <h4>EMPTY / 尚无会话</h4>
+        <div class="empty-demo">
+          <div class="glyph">档</div>
+          <b>这里还没有分析档案</b>
+          <span>创建第一次分析后，结果会按时间归档在这里。</span>
+          <div style="margin-top:14px"><button class="btn btn--primary btn--sm" type="button">创建分析</button></div>
+        </div>
+        <p>空状态给出唯一的下一步行动，不堆叠说明文字。</p>
+      </div>
+      <div class="state-card">
+        <h4>ERROR / 岗位级失败</h4>
+        <div class="fail">岗位分析失败：模型返回内容不是有效 JSON。该岗位不影响其他岗位，可单独重试。</div>
+        <p>错误跟随岗位卡片出现，而不是整页报错；顶部状态标记为「部分成功」。</p>
+      </div>
+      <div class="state-card">
+        <h4>VALIDATION / 字段级校验</h4>
+        <div class="field">
+          <label for="demo-bad">岗位 JD <b>*</b></label>
+          <textarea class="textarea" id="demo-bad" rows="2" style="border-color:var(--red);box-shadow:0 0 0 3px var(--red-wash)">太短了</textarea>
+          <span class="hint" style="color:var(--red)">岗位 JD 至少 30 字，请粘贴完整职位描述。</span>
+        </div>
+        <p>422 字段级错误直接定位到输入框，滚动到首个不合规字段并聚焦。</p>
+      </div>
+    </div>
+
+    <table class="spec-table" style="margin-top:36px">
+      <thead>
+        <tr><th>场景</th><th>设计要求</th><th>落地位置</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>长任务</td><td>页面关闭后仍继续；重新进入会话列表可查看进度与结果</td><td>CreateView / SessionsView</td></tr>
+        <tr><td>动效</td><td>仅用于入场揭示、hover 位移与分数条增长；时长 180–800ms</td><td>全局 transition token</td></tr>
+        <tr><td>焦点</td><td>1px 墨线 + 3px 朱砂 wash 外环，键盘可见</td><td>input / button / a</td></tr>
+        <tr><td>对比度</td><td>正文与纸色 ≥ 7:1；辅助文字 ≥ 4.5:1；分数不只依赖颜色区分</td><td>全局 token</td></tr>
+        <tr><td>移动端</td><td>单栏、提交按钮吸底、导航收起；表格行转为两列摘要</td><td>≤720px 断点</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="sec reveal" id="mapping">
+    <div class="sec-head">
+      <div>
+        <div class="sec-no">07 / IMPLEMENTATION MAP</div>
+        <h2 class="sec-title">与现有前端的对应关系</h2>
+      </div>
+      <p class="sec-desc">
+        不引入新的组件体系。设计稿直接映射到现有 Vue 视图与组件，先改 tokens，
+        再逐页替换布局与样式，数据结构保持不变。
+      </p>
+    </div>
+
+    <div class="map-grid">
+      <div class="map-card">
+        <h4>页面 → 视图 / 组件</h4>
+        <ul>
+          <li><span>登录 / 注册</span><code>LoginView.vue · RegisterView.vue</code></li>
+          <li><span>创建分析</span><code>CreateView.vue · ResumeUploader.vue</code></li>
+          <li><span>分析结果</span><code>RunDetailView.vue · RunResults.vue · JobCard.vue</code></li>
+          <li><span>查询会话</span><code>RunQueryView.vue · SnapshotPanel.vue</code></li>
+          <li><span>会话列表</span><code>SessionsView.vue</code></li>
+          <li><span>记忆设置</span><code>MemorySettingsView.vue · MemoryList.vue</code></li>
+          <li><span>摘要面板</span><code>SessionSummaryPanel.vue</code></li>
+          <li><span>分数与空态</span><code>ScoreBadge.vue · EmptyState.vue · ErrorNotice.vue</code></li>
+        </ul>
+      </div>
+      <div class="map-card">
+        <h4>样式文件改动顺序</h4>
+        <ul>
+          <li><span>1. 替换颜色 / 字体 / 圆角 token</span><code>src/styles/tokens.css</code></li>
+          <li><span>2. 统一按钮、输入、标签、提示</span><code>src/styles/base.css</code></li>
+          <li><span>3. 应用外壳与导航</span><code>src/App.vue</code></li>
+          <li><span>4. 结果页档案卡布局</span><code>RunResults.vue · JobCard.vue</code></li>
+          <li><span>5. 记忆页双栏与深色摘要</span><code>MemorySettingsView.vue</code></li>
+          <li><span>6. 移动端断点与吸底提交</span><code>CreateView.vue</code></li>
+        </ul>
+        <p class="hint" style="margin-top:14px;line-height:1.8">
+          品牌基线：朱砂 #B9402A · 纸色 #F2EEE4 · 墨 #191712；
+          标题 Noto Serif SC，正文 Noto Sans SC，数据 IBM Plex Mono。
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <span>求职助手 · CAREER DOSSIER SYSTEM</span>
+    <span>UI DRAFT v1.0 · 2026-11-23 · DESIGNED FOR VUE 3</span>
+    <span>下一步：将 tokens 落入 tokens.css → 逐页替换</span>
+  </footer>
+
+</div>
+<script>
+  // 滚动揭示
+  const revealObserver = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('is-in');
+          revealObserver.unobserve(entry.target);
+        }
+      });
+    },
+    { threshold: 0.08, rootMargin: '0px 0px -40px 0px' },
+  );
+  document.querySelectorAll('.reveal').forEach((el) => revealObserver.observe(el));
+
+  // 演示用：分段控件 / 筛选标签切换
+  document.querySelectorAll('[data-tabs]').forEach((group) => {
+    group.addEventListener('click', (event) => {
+      const btn = event.target.closest('button');
+      if (!btn || btn.hasAttribute('data-static')) return;
+      group.querySelectorAll('button').forEach((item) => item.classList.remove('on'));
+      btn.classList.add('on');
+    });
+  });
+
+  // 演示用：长期记忆开关
+  document.querySelectorAll('.switch').forEach((node) => {
+    node.addEventListener('click', () => {
+      const off = node.classList.toggle('off');
+      node.setAttribute('aria-checked', String(!off));
+    });
+  });
+</script>
+</body>
+</html>

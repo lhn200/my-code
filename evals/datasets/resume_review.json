@@ -1,0 +1,72 @@
+{
+  "version": "1.0.0",
+  "task": "resume_review",
+  "samples": [
+    {
+      "id": "rr-001",
+      "input": {
+        "goal": "后端工程师",
+        "resume_text": "Backend engineer with five years of Python experience. Built REST APIs and internal services. Managed PostgreSQL databases and wrote automated tests. Led code reviews. Education: BSc Computer Science.",
+        "profile_json": {
+          "job_id": "job-1",
+          "title": "Backend Engineer",
+          "company": "Acme",
+          "must_have": ["Python", "PostgreSQL", "Docker"],
+          "nice_to_have": ["Kubernetes"],
+          "responsibilities": ["Design REST services", "Write tests"],
+          "keywords": ["Python", "PostgreSQL", "Docker"],
+          "status": "ok"
+        }
+      },
+      "expected": {
+        "missing": ["Docker"],
+        "score": 72,
+        "hallucination_guard": ["Kubernetes", "Rust"]
+      }
+    },
+    {
+      "id": "rr-002",
+      "input": {
+        "goal": "数据分析师",
+        "resume_text": "Data analyst with three years of SQL and Excel experience. Built reporting dashboards in Excel. Presented monthly business reviews. Education: BA Economics.",
+        "profile_json": {
+          "job_id": "job-2",
+          "title": "Data Analyst",
+          "company": "Acme",
+          "must_have": ["SQL", "Tableau", "Python"],
+          "nice_to_have": ["dbt"],
+          "responsibilities": ["Build dashboards", "Maintain reporting pipelines"],
+          "keywords": ["SQL", "Tableau", "Python"],
+          "status": "ok"
+        }
+      },
+      "expected": {
+        "missing": ["Tableau", "Python"],
+        "score": 55,
+        "hallucination_guard": ["Tableau", "Python", "dbt"]
+      }
+    },
+    {
+      "id": "rr-003",
+      "input": {
+        "goal": "前端工程师",
+        "resume_text": "Frontend engineer with four years of React and TypeScript experience. Built accessible component libraries and design systems. Strong CSS and testing skills. Education: BSc Software Engineering.",
+        "profile_json": {
+          "job_id": "job-3",
+          "title": "Frontend Developer",
+          "company": "Acme",
+          "must_have": ["React", "TypeScript", "Storybook"],
+          "nice_to_have": ["accessibility"],
+          "responsibilities": ["Build accessible components"],
+          "keywords": ["React", "TypeScript", "Storybook"],
+          "status": "ok"
+        }
+      },
+      "expected": {
+        "missing": ["Storybook"],
+        "score": 85,
+        "hallucination_guard": ["Storybook", "Vue"]
+      }
+    }
+  ]
+}
