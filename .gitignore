@@ -36,3 +36,10 @@ Thumbs.db
 
 # OpenSpec working docs
 openspec/
+
+# 简历成品（含个人信息，仅本地保留）
+resume-deliverables/
+
+# 本地备份
+.resume-local-backup/
+.repo-backup-*.bundle
